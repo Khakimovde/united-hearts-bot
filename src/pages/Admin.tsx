@@ -186,6 +186,8 @@ function UsersSection() {
   const [users, setUsers] = useState<DbUserRow[]>([]);
   const [selectedUser, setSelectedUser] = useState<DbUserRow | null>(null);
   const [coinAdjust, setCoinAdjust] = useState('');
+  const [fruitType, setFruitType] = useState<'apple' | 'pear' | 'grape' | 'fig'>('apple');
+  const [fruitAmount, setFruitAmount] = useState('');
   const [referralCount, setReferralCount] = useState(0);
 
   useEffect(() => {
