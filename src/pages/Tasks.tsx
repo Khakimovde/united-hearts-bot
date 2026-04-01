@@ -1,9 +1,10 @@
 import { useGarden } from '@/contexts/GardenContext';
 import { CoinBalance } from '@/components/CoinBalance';
-import { CheckCircle2, ChevronRight, Coins, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Coins, Loader2, AlertTriangle } from 'lucide-react';
 import { AD_TASK_DAILY_MAX, AD_TASK_COIN_PER_AD } from '@/lib/gameConfig';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTelegram } from '@/hooks/useTelegram';
 
 import taskAdImg from '@/assets/task-ad.png';
 import taskChannelImg from '@/assets/task-channel.png';
@@ -42,9 +43,11 @@ function formatTimeLeft(ms: number) {
 }
 
 export default function Tasks() {
-  const { userData, watchAdTask, joinChannel, verifyChannel } = useGarden();
+  const { userData, watchAdTask, joinChannel } = useGarden();
+  const telegram = useTelegram();
   const [, tick] = useState(0);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [dbChannelTasks, setDbChannelTasks] = useState<DbChannelTask[]>([]);
 
   useEffect(() => {
@@ -86,34 +89,67 @@ export default function Tasks() {
   const completedTasks = (adsDone ? 1 : 0) + Math.min(channelsDone, dbChannelTasks.length);
 
   const handleVerifyChannel = useCallback(async (channelId: string, reward: number) => {
-    if (!userData.telegramId) return;
+    if (!telegram.id) return;
     setVerifying(channelId);
-    
-    // Check if already completed
-    const { data: existing } = await supabase
-      .from('channel_tasks_completed')
-      .select('id')
-      .eq('user_telegram_id', userData.telegramId)
-      .eq('channel_id', channelId)
-      .maybeSingle();
+    setVerifyError(null);
 
-    if (existing) {
-      setVerifying(null);
-      setChannelsDoneIds(prev => prev.includes(channelId) ? prev : [...prev, channelId]);
-      return;
+    try {
+      // Check membership via bot API through edge function
+      const { data: checkResult, error: checkError } = await supabase.functions.invoke('telegram-bot', {
+        body: {
+          action: 'check_channel_membership',
+          user_id: telegram.id,
+          channel_id: channelId,
+        },
+      });
+
+      if (checkError || !checkResult?.is_member) {
+        setVerifyError(channelId);
+        setVerifying(null);
+        setTimeout(() => setVerifyError(null), 3000);
+        return;
+      }
+
+      // Check if already completed
+      const { data: existing } = await supabase
+        .from('channel_tasks_completed')
+        .select('id')
+        .eq('user_telegram_id', telegram.id)
+        .eq('channel_id', channelId)
+        .maybeSingle();
+
+      if (existing) {
+        setVerifying(null);
+        setChannelsDoneIds(prev => prev.includes(channelId) ? prev : [...prev, channelId]);
+        return;
+      }
+
+      // Record completion and give reward
+      await supabase.from('channel_tasks_completed').insert({
+        user_telegram_id: telegram.id,
+        channel_id: channelId,
+      } as any);
+
+      // Update coins
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('coins')
+        .eq('telegram_id', telegram.id)
+        .single();
+
+      if (currentUser) {
+        await supabase.from('users').update({
+          coins: (currentUser.coins as number) + reward,
+        } as any).eq('telegram_id', telegram.id);
+      }
+
+      setChannelsDoneIds(prev => [...prev, channelId]);
+    } catch (e) {
+      setVerifyError(channelId);
+      setTimeout(() => setVerifyError(null), 3000);
     }
-
-    // Record completion and give reward
-    await supabase.from('channel_tasks_completed').insert({
-      user_telegram_id: userData.telegramId,
-      channel_id: channelId,
-    } as any);
-
-    // Update coins
-    verifyChannel(channelId);
-    setChannelsDoneIds(prev => [...prev, channelId]);
     setVerifying(null);
-  }, [userData.telegramId, verifyChannel]);
+  }, [telegram.id]);
 
   return (
     <div className="px-4 py-3 pb-28 overflow-auto" style={{ background: 'linear-gradient(180deg, hsl(20 30% 96%) 0%, hsl(15 20% 93%) 100%)', height: '100vh' }}>
@@ -126,7 +162,7 @@ export default function Tasks() {
         <CoinBalance />
       </div>
       <p className="text-sm text-muted-foreground mb-5">
-        Vazifalarni bajaring va tanga yutib oling 🎯
+        Vazifalarni bajaring va tanga yutib oling
       </p>
 
       {/* Overall Progress Card */}
@@ -157,7 +193,7 @@ export default function Tasks() {
               Reklama ko'rish
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {adsWatchedToday}/{AD_TASK_DAILY_MAX} ta reklama • Har biri {AD_TASK_COIN_PER_AD} tanga
+              {adsWatchedToday}/{AD_TASK_DAILY_MAX} ta reklama | Har biri {AD_TASK_COIN_PER_AD} tanga
             </p>
             <div className="flex items-center gap-1 mt-1">
               <Coins className="w-3.5 h-3.5 text-accent" />
@@ -195,7 +231,7 @@ export default function Tasks() {
           </div>
         </div>
         <p className="text-[11px] text-muted-foreground mt-2">
-          ⏰ Yangilanishgacha: {formatTimeLeft(timeLeft)}
+          Yangilanishgacha: {formatTimeLeft(timeLeft)}
         </p>
       </div>
 
@@ -203,6 +239,7 @@ export default function Tasks() {
       {dbChannelTasks.map((channel) => {
         const isJoined = channelsDoneIds.includes(channel.channel_id);
         const isVerifying = verifying === channel.channel_id;
+        const hasError = verifyError === channel.channel_id;
 
         return (
           <div key={channel.id} className="card-cartoon p-4 mb-3">
@@ -213,7 +250,7 @@ export default function Tasks() {
                   Kanalga obuna
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {isJoined ? 'Obuna tasdiqlangan ✓' : channel.channel_name}
+                  {isJoined ? 'Obuna tasdiqlangan' : channel.channel_name}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <Coins className="w-3.5 h-3.5 text-accent" />
@@ -255,6 +292,12 @@ export default function Tasks() {
                 )}
               </div>
             </div>
+            {hasError && (
+              <div className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: 'hsl(0 70% 95%)' }}>
+                <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'hsl(0 75% 50%)' }} />
+                <span className="text-xs font-medium" style={{ color: 'hsl(0 75% 50%)' }}>Siz hali kanalga obuna bo'lmagansiz!</span>
+              </div>
+            )}
           </div>
         );
       })}

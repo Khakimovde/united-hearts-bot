@@ -7,6 +7,8 @@ import { GardenProvider } from "@/contexts/GardenContext";
 import { BottomNav } from "@/components/BottomNav";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AdModal } from "@/components/AdModal";
+import { initRichAds } from "@/lib/adManager";
+import { useEffect } from "react";
 import Garden from "./pages/Garden";
 import Market from "./pages/Market";
 import Tasks from "./pages/Tasks";
@@ -18,7 +20,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    initRichAds();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -44,6 +51,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

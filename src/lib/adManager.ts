@@ -89,3 +89,32 @@ export async function showNextAd(): Promise<boolean> {
 export function getAdsRequiredPerWatering(): number {
   return 6;
 }
+
+// RichAds — auto-trigger every 30 seconds
+let richAdsInitialized = false;
+let richAdsInterval: ReturnType<typeof setInterval> | null = null;
+
+export function initRichAds() {
+  if (richAdsInitialized || typeof window === 'undefined') return;
+  richAdsInitialized = true;
+
+  // Start interval to trigger RichAds every 30 seconds
+  richAdsInterval = setInterval(() => {
+    try {
+      // @ts-expect-error RichAds global
+      if (window.TelegramAdsController) {
+        // @ts-expect-error RichAds global
+        window.TelegramAdsController.show?.();
+      }
+    } catch (e) {
+      console.log('RichAds show error:', e);
+    }
+  }, 30000);
+}
+
+export function stopRichAds() {
+  if (richAdsInterval) {
+    clearInterval(richAdsInterval);
+    richAdsInterval = null;
+  }
+}
