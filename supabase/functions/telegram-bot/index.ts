@@ -122,9 +122,9 @@ async function handleStart(chatId: number, userId: number, username: string, fir
     sticker: "CAACAgIAAxkBAAEBJ2Nn69FRwuT3a5aQz3fKz0-6AAH5eQACVAADQbVWDLchiEMDleYzNgQ",
   });
 
-  await tgApi("sendMessage", {
+    await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `Assalomu alaykum, <b>${firstName}</b>! 🌱\n\nBloomPay ilovasiga xush kelibsiz!\n\n🌳 Virtual bog'dorchilik o'yini — daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\nDavom etish uchun foydalanuvchi shartlarini tasdiqlang:`,
+    text: `Assalomu alaykum, <b>${firstName}</b>! 🌱\n\nBloomPay ilovasiga xush kelibsiz!\n\n🌳 Virtual bog'dorchilik o'yini — daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\nDavom etish uchun foydalanuvchi shartlarini tasdiqlang:\n\n⚠️ <i>Tasdiqlash tugmasini bosganingizda siz bot qoidalariga rozilik bildirgan bo'lasiz.</i>`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
