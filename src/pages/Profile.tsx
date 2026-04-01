@@ -9,6 +9,8 @@ import statAdsImg from '@/assets/stat-ads-watched.png';
 export default function Profile() {
   const { userData } = useGarden();
   const telegram = useTelegram();
+  const navigate = useNavigate();
+  const isAdmin = telegram.id === ADMIN_TELEGRAM_ID;
 
   const treesGrown = userData.stats.totalTreesGrown;
   const referralCount = userData.referral.referredUsers.length;
