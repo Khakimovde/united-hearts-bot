@@ -97,10 +97,10 @@ export default function Admin() {
 
       <div className="flex gap-1 mb-5 p-1 rounded-2xl bg-muted overflow-x-auto">
         {[
-          { key: 'stats' as AdminTab, label: '📊 Stat' },
-          { key: 'users' as AdminTab, label: '👤 User' },
-          { key: 'withdrawals' as AdminTab, label: "💰 So'rov" },
-          { key: 'channels' as AdminTab, label: '📢 Kanal' },
+          { key: 'stats' as AdminTab, label: 'Statistika' },
+          { key: 'users' as AdminTab, label: 'Foydalanuvchilar' },
+          { key: 'withdrawals' as AdminTab, label: "So'rovlar" },
+          { key: 'channels' as AdminTab, label: 'Kanallar' },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -148,7 +148,7 @@ function StatsSection() {
       </div>
 
       <div className="bg-card rounded-2xl border border-border p-4">
-        <h3 className="text-sm font-bold text-card-foreground mb-3">🍎 Mevalar tafsiloti</h3>
+        <h3 className="text-sm font-bold text-card-foreground mb-3">Mevalar tafsiloti</h3>
         <div className="grid grid-cols-2 gap-2">
           {Object.entries(stats.totalFruits).map(([type, count]) => {
             const cfg = TREE_CONFIGS[type as keyof typeof TREE_CONFIGS];
@@ -255,10 +255,12 @@ function UsersSection() {
 
         <div className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl" style={{ background: 'hsl(0 75% 50% / 0.1)' }}>🧑‍🌾</div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl" style={{ background: 'hsl(0 75% 50% / 0.1)' }}>
+              <Users className="w-6 h-6 text-muted-foreground" />
+            </div>
             <div>
               <p className="font-bold text-card-foreground">{selectedUser.first_name}</p>
-              <p className="text-xs text-muted-foreground">@{selectedUser.username} • ID: {selectedUser.telegram_id}</p>
+              <p className="text-xs text-muted-foreground">@{selectedUser.username} | ID: {selectedUser.telegram_id}</p>
             </div>
           </div>
 
@@ -350,10 +352,10 @@ function UsersSection() {
               onChange={(e) => setFruitType(e.target.value as any)}
               className="bg-muted rounded-xl px-2 py-2 text-xs text-card-foreground"
             >
-              <option value="apple">🍎 Olma</option>
-              <option value="pear">🍐 Nok</option>
-              <option value="grape">🍇 Uzum</option>
-              <option value="fig">🫐 Anjir</option>
+              <option value="apple">{TREE_CONFIGS.apple.emoji} Olma</option>
+              <option value="pear">{TREE_CONFIGS.pear.emoji} Nok</option>
+              <option value="grape">{TREE_CONFIGS.grape.emoji} Uzum</option>
+              <option value="fig">{TREE_CONFIGS.fig.emoji} Anjir</option>
             </select>
             <input
               type="number"
@@ -402,10 +404,12 @@ function UsersSection() {
           onClick={() => { setSelectedUser(user); loadReferralCount(user.telegram_id); }}
           className="w-full bg-card rounded-2xl border border-border p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-all"
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ background: 'hsl(0 75% 50% / 0.1)' }}>🧑‍🌾</div>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(0 75% 50% / 0.1)' }}>
+            <Users className="w-5 h-5 text-muted-foreground" />
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-card-foreground">{user.first_name}</p>
-            <p className="text-xs text-muted-foreground">@{user.username} • {user.coins.toLocaleString()} tanga</p>
+            <p className="text-xs text-muted-foreground">@{user.username} | {user.coins.toLocaleString()} tanga</p>
           </div>
           <span className="text-muted-foreground text-sm">→</span>
         </button>
@@ -454,7 +458,6 @@ function WithdrawalsSection() {
     } as any).eq('id', id);
     setWithdrawals(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' as const } : w));
 
-    // Send approval notification
     if (w) {
       try {
         await supabase.functions.invoke('telegram-bot', {
@@ -508,7 +511,6 @@ function WithdrawalsSection() {
     setRejectingId(null);
     setRejectReason('');
 
-    // Send rejection notification
     if (w) {
       try {
         await supabase.functions.invoke('telegram-bot', {
@@ -527,10 +529,10 @@ function WithdrawalsSection() {
   };
 
   const STATUS_COLORS = {
-    pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: '⏳ Kutilmoqda' },
-    approved: { bg: 'hsl(200 70% 50%)', text: 'hsl(0 0% 100%)', label: "✅ Tasdiqlangan" },
-    paid: { bg: 'hsl(145 50% 45%)', text: 'hsl(0 0% 100%)', label: "💰 To'langan" },
-    rejected: { bg: 'hsl(0 70% 50%)', text: 'hsl(0 0% 100%)', label: '❌ Rad etilgan' },
+    pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: 'Kutilmoqda' },
+    approved: { bg: 'hsl(200 70% 50%)', text: 'hsl(0 0% 100%)', label: "Tasdiqlangan" },
+    paid: { bg: 'hsl(145 50% 45%)', text: 'hsl(0 0% 100%)', label: "To'langan" },
+    rejected: { bg: 'hsl(0 70% 50%)', text: 'hsl(0 0% 100%)', label: 'Rad etilgan' },
   };
 
   return (
@@ -568,7 +570,7 @@ function WithdrawalsSection() {
 
       {pending.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-card-foreground mb-2">⏳ Kutilmoqda ({pending.length})</h3>
+          <h3 className="text-sm font-bold text-card-foreground mb-2">Kutilmoqda ({pending.length})</h3>
           <div className="space-y-2.5">
             {pending.map(w => {
               const level = PAYMENT_LEVELS.find(l => l.id === w.payment_level_id) || PAYMENT_LEVELS[0];
@@ -583,7 +585,7 @@ function WithdrawalsSection() {
                       )}
                       <div>
                         <p className="text-sm font-medium text-card-foreground">{w.first_name} (@{w.username})</p>
-                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} • {new Date(w.created_at).toLocaleString()}</p>
+                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} | {new Date(w.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -592,7 +594,7 @@ function WithdrawalsSection() {
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mb-2">
-                    📱 {w.phone} • 💳 {w.card_number} • {level.name}
+                    Tel: {w.phone} | Karta: {w.card_number} | {level.name}
                   </div>
 
                   {rejectingId === w.id ? (
@@ -639,14 +641,13 @@ function WithdrawalsSection() {
 
       {pending.length === 0 && approved.length === 0 && (
         <div className="text-center py-8 bg-card rounded-2xl border border-border">
-          <p className="text-sm text-muted-foreground">✅ Kutilayotgan so'rovlar yo'q</p>
+          <p className="text-sm text-muted-foreground">Kutilayotgan so'rovlar yo'q</p>
         </div>
       )}
 
-      {/* Approved - waiting for payment */}
       {approved.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-card-foreground mb-2">✅ Tasdiqlangan — to'lanishi kerak ({approved.length})</h3>
+          <h3 className="text-sm font-bold text-card-foreground mb-2">Tasdiqlangan — to'lanishi kerak ({approved.length})</h3>
           <div className="space-y-2.5">
             {approved.map(w => {
               const level = PAYMENT_LEVELS.find(l => l.id === w.payment_level_id) || PAYMENT_LEVELS[0];
@@ -661,7 +662,7 @@ function WithdrawalsSection() {
                       )}
                       <div>
                         <p className="text-sm font-medium text-card-foreground">{w.first_name} (@{w.username})</p>
-                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} • {new Date(w.created_at).toLocaleString()}</p>
+                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} | {new Date(w.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -670,7 +671,7 @@ function WithdrawalsSection() {
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mb-2">
-                    📱 {w.phone} • 💳 {w.card_number}
+                    Tel: {w.phone} | Karta: {w.card_number}
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleMarkPaid(w.id)}
@@ -695,7 +696,7 @@ function WithdrawalsSection() {
 
       {processed.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-card-foreground mb-2">📋 Qayta ishlangan</h3>
+          <h3 className="text-sm font-bold text-card-foreground mb-2">Qayta ishlangan</h3>
           <div className="space-y-2">
             {processed.map(w => {
               const sc = STATUS_COLORS[w.status];
@@ -833,12 +834,12 @@ function ChannelsSection() {
                         ? 'text-white'
                         : 'bg-muted text-muted-foreground'
                     }`} style={channel.is_active ? { background: 'hsl(145 50% 45%)' } : {}}>
-                      {channel.is_active ? '✅ Faol' : '⏸ Nofaol'}
+                      {channel.is_active ? 'Faol' : 'Nofaol'}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-accent font-bold">🎁 {channel.reward} tanga</p>
+                  <p className="text-xs text-accent font-bold">{channel.reward} tanga</p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => toggleActive(channel.id, channel.is_active)}

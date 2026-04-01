@@ -7,7 +7,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const ADMIN_ID = 5326022510;
 const CHANNEL_USERNAME = "BloomPayuz";
-const MINI_APP_URL = "https://id-preview--12fcaa71-cf16-4dc8-82dd-321e07f93bc6.lovable.app";
+const MINI_APP_URL = "https://bloompay.c1621.coresuz.ru";
 const TERMS_URL = "https://terms.c1621.coresuz.ru";
 const SUPPORT_BOT = "http://t.me/BloomPay_Supbot";
 const CHANNEL_LINK = "https://t.me/BloomPayuz";
@@ -118,13 +118,14 @@ async function handleStart(chatId: number, userId: number, username: string, fir
 
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `🌱 <b>BloomPay</b>ga xush kelibsiz!\n\n` +
-      `📜 Davom etishdan oldin foydalanuvchi shartlarini o'qib chiqing va tasdiqlang:`,
+    text: `Assalomu alaykum, <b>${firstName}</b>! BloomPay ilovasiga xush kelibsiz.\n\n` +
+      `BloomPay — bu virtual bog'dorchilik o'yini. Daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\n` +
+      `Davom etish uchun foydalanuvchi shartlarini tasdiqlang:`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📜 Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
-        [{ text: "✅ Tasdiqlayman", callback_data: "accept_terms" }],
+        [{ text: "Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
+        [{ text: "Tasdiqlayman", callback_data: "accept_terms" }],
       ],
     },
   });
@@ -135,16 +136,16 @@ async function handleStart(chatId: number, userId: number, username: string, fir
 async function showMainMenu(chatId: number, firstName: string) {
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `🌳 <b>${firstName}</b>, asosiy menyu:`,
+    text: `Xush kelibsiz, <b>${firstName}</b>!\n\nBloomPay — virtual bog'dorchilik o'yini. Daraxt eking, suv quying, meva yig'ing va tangalarni haqiqiy pulga aylantiring.`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "🌱 Ochish", web_app: { url: MINI_APP_URL } }],
+        [{ text: "Ochish", web_app: { url: MINI_APP_URL } }],
         [
-          { text: "📢 Kanal", url: CHANNEL_LINK },
-          { text: "📞 Aloqa", url: SUPPORT_BOT },
+          { text: "Kanal", url: CHANNEL_LINK },
+          { text: "Aloqa", url: SUPPORT_BOT },
         ],
-        [{ text: "📜 Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
+        [{ text: "Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
       ],
     },
   });
@@ -166,11 +167,11 @@ async function handleCallbackQuery(callbackQuery: any) {
 
     await tgApi("sendMessage", {
       chat_id: chatId,
-      text: "📱 <b>Telefon raqamingizni yuboring</b>\n\nQuyidagi tugmani bosing:",
+      text: "Telefon raqamingizni yuboring\n\nQuyidagi tugmani bosing:",
       parse_mode: "HTML",
       reply_markup: {
         keyboard: [
-          [{ text: "📱 Raqamni yuborish", request_contact: true }],
+          [{ text: "Raqamni yuborish", request_contact: true }],
         ],
         resize_keyboard: true,
         one_time_keyboard: true,
@@ -241,10 +242,10 @@ async function handleCallbackQuery(callbackQuery: any) {
 
           await sendNotification(
             referrer.telegram_id,
-            `🎉 <b>Yangi referal!</b>\n\n` +
-            `👤 <b>${firstName}</b> (@${username}) sizga referal bo'ldi!\n` +
-            `📊 Jami referallaringiz: <b>${(refCount || 0)}</b> ta\n` +
-            `💰 +10 tanga qo'shildi!`
+            `Yangi referal!\n\n` +
+            `${firstName} (@${username}) sizga referal bo'ldi!\n` +
+            `Jami referallaringiz: ${(refCount || 0)} ta\n` +
+            `+10 tanga qo'shildi!`
           );
         }
       }
@@ -260,7 +261,7 @@ async function handleCallbackQuery(callbackQuery: any) {
 
       await tgApi("sendMessage", {
         chat_id: chatId,
-        text: "🎉 <b>Tabriklaymiz!</b>\n\nMuvaffaqiyatli ro'yxatdan o'tdingiz!",
+        text: "Tabriklaymiz! Muvaffaqiyatli ro'yxatdan o'tdingiz!",
         parse_mode: "HTML",
         reply_markup: { remove_keyboard: true },
       });
@@ -269,12 +270,12 @@ async function handleCallbackQuery(callbackQuery: any) {
     } else {
       await tgApi("sendMessage", {
         chat_id: chatId,
-        text: "❌ <b>Siz hali kanalga obuna bo'lmagansiz!</b>\n\nAvval kanalga obuna bo'ling, keyin tekshiring.",
+        text: "Siz hali kanalga obuna bo'lmagansiz!\n\nAvval kanalga obuna bo'ling, keyin tekshiring.",
         parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
-            [{ text: "📢 Kanalga o'tish", url: CHANNEL_LINK }],
-            [{ text: "🔄 Tekshirish", callback_data: "check_channel" }],
+            [{ text: "Kanalga o'tish", url: CHANNEL_LINK }],
+            [{ text: "Tekshirish", callback_data: "check_channel" }],
           ],
         },
       });
@@ -296,19 +297,19 @@ async function handleContact(message: any) {
 
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: "✅ <b>Raqam qabul qilindi!</b>",
+    text: "Raqam qabul qilindi!",
     parse_mode: "HTML",
     reply_markup: { remove_keyboard: true },
   });
 
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `📢 Endi rasmiy kanalimizga obuna bo'ling:\n@${CHANNEL_USERNAME}\n\nObuna bo'lgach, tekshiring:`,
+    text: `Endi rasmiy kanalimizga obuna bo'ling:\n@${CHANNEL_USERNAME}\n\nObuna bo'lgach, tekshiring:`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📢 Kanalga o'tish", url: CHANNEL_LINK }],
-        [{ text: "✅ Tekshirish", callback_data: "check_channel" }],
+        [{ text: "Kanalga o'tish", url: CHANNEL_LINK }],
+        [{ text: "Tekshirish", callback_data: "check_channel" }],
       ],
     },
   });
@@ -318,21 +319,21 @@ async function handlePaymentNotification(userTelegramId: string, amount: number,
   if (status === "approved") {
     await sendNotification(
       userTelegramId,
-      `✅ <b>So'rovingiz tasdiqlandi!</b>\n\n` +
-      `💰 ${amount.toLocaleString()} tanga (${amountUzs.toLocaleString()} UZS) to'lov so'rovingiz tasdiqlandi.\n\n` +
-      `⏳ Tez orada hisobingizga o'tkaziladi.`
+      `So'rovingiz tasdiqlandi!\n\n` +
+      `${amount.toLocaleString()} tanga (${amountUzs.toLocaleString()} UZS) to'lov so'rovingiz tasdiqlandi.\n\n` +
+      `Tez orada hisobingizga o'tkaziladi.`
     );
   } else if (status === "paid") {
     await sendNotification(
       userTelegramId,
-      `💰 <b>To'lov amalga oshirildi!</b>\n\n` +
-      `✅ Sizning ${amount.toLocaleString()} tanga (${amountUzs.toLocaleString()} UZS) to'lovingiz muvaffaqiyatli amalga oshirildi!\n\n` +
-      `🎉 Pul kartangizga o'tkazildi.`
+      `To'lov amalga oshirildi!\n\n` +
+      `Sizning ${amount.toLocaleString()} tanga (${amountUzs.toLocaleString()} UZS) to'lovingiz muvaffaqiyatli amalga oshirildi!\n\n` +
+      `Pul kartangizga o'tkazildi.`
     );
   } else if (status === "rejected") {
     await sendNotification(
       userTelegramId,
-      `❌ <b>To'lov rad etildi</b>\n\n` +
+      `To'lov rad etildi\n\n` +
       `Sizning ${amount.toLocaleString()} tanga to'lov so'rovingiz rad etildi.\n` +
       `Aloqa markazi orqali murojaat qiling.`
     );
@@ -377,11 +378,11 @@ serve(async (req) => {
           } else if (state.step === "phone") {
             await tgApi("sendMessage", {
               chat_id: chatId,
-              text: "📱 Iltimos, quyidagi tugmani bosib telefon raqamingizni yuboring:",
+              text: "Iltimos, quyidagi tugmani bosib telefon raqamingizni yuboring:",
               parse_mode: "HTML",
               reply_markup: {
                 keyboard: [
-                  [{ text: "📱 Raqamni yuborish", request_contact: true }],
+                  [{ text: "Raqamni yuborish", request_contact: true }],
                 ],
                 resize_keyboard: true,
                 one_time_keyboard: true,
@@ -390,23 +391,23 @@ serve(async (req) => {
           } else if (state.step === "channel") {
             await tgApi("sendMessage", {
               chat_id: chatId,
-              text: "📢 Iltimos, kanalga obuna bo'ling va tekshiring:",
+              text: "Iltimos, kanalga obuna bo'ling va tekshiring:",
               reply_markup: {
                 inline_keyboard: [
-                  [{ text: "📢 Kanalga o'tish", url: CHANNEL_LINK }],
-                  [{ text: "✅ Tekshirish", callback_data: "check_channel" }],
+                  [{ text: "Kanalga o'tish", url: CHANNEL_LINK }],
+                  [{ text: "Tekshirish", callback_data: "check_channel" }],
                 ],
               },
             });
           } else if (state.step === "terms" || state.step === "welcome") {
             await tgApi("sendMessage", {
               chat_id: chatId,
-              text: `📜 Iltimos, shartlarni o'qib tasdiqlang:`,
+              text: `Iltimos, shartlarni o'qib tasdiqlang:`,
               parse_mode: "HTML",
               reply_markup: {
                 inline_keyboard: [
-                  [{ text: "📜 Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
-                  [{ text: "✅ Tasdiqlayman", callback_data: "accept_terms" }],
+                  [{ text: "Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
+                  [{ text: "Tasdiqlayman", callback_data: "accept_terms" }],
                 ],
               },
             });

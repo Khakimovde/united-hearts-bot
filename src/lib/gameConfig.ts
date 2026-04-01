@@ -39,13 +39,13 @@ export interface PaymentLevel {
 }
 
 export const PAYMENT_LEVELS: PaymentLevel[] = [
-  { id: 1, name: 'Sprout', image: tier1Img, minTrees: 0, minReferrals: 0, processingDays: 7, weeklyLimit: 10000, color: 'hsl(145 35% 55%)', darkColor: 'hsl(145 35% 40%)', description: "Boshlang'ich daraja. So'rovlar 7 ish kunida ko'rib chiqiladi." },
-  { id: 2, name: 'Greenleaf', image: tier2Img, minTrees: 15, minReferrals: 20, processingDays: 6, weeklyLimit: 15000, color: 'hsl(120 40% 50%)', darkColor: 'hsl(120 40% 35%)', description: "15 daraxt + 20 referal. 6 ish kuni. Haftasiga 15,000 tanga." },
-  { id: 3, name: 'Bloom', image: tier3Img, minTrees: 30, minReferrals: 35, processingDays: 5, weeklyLimit: 25000, color: 'hsl(200 60% 50%)', darkColor: 'hsl(200 60% 35%)', description: "30 daraxt + 35 referal. 5 ish kuni. Haftasiga 25,000 tanga." },
-  { id: 4, name: 'Harvest', image: tier4Img, minTrees: 80, minReferrals: 100, processingDays: 4, weeklyLimit: 40000, color: 'hsl(38 80% 52%)', darkColor: 'hsl(38 80% 38%)', description: "80 daraxt + 100 referal. 4 ish kuni. Haftasiga 40,000 tanga." },
-  { id: 5, name: 'Evergreen', image: tier5Img, minTrees: 150, minReferrals: 270, processingDays: 3, weeklyLimit: 70000, color: 'hsl(280 60% 55%)', darkColor: 'hsl(280 60% 40%)', description: "150 daraxt + 270 referal. 3 ish kuni. Haftasiga 70,000 tanga." },
-  { id: 6, name: 'Ancient Oak', image: tier6Img, minTrees: 250, minReferrals: 450, processingDays: 2, weeklyLimit: 120000, color: 'hsl(0 75% 50%)', darkColor: 'hsl(0 75% 38%)', description: "250 daraxt + 450 referal. 2 ish kuni. Haftasiga 120,000 tanga." },
-  { id: 7, name: 'Mythic Tree', image: tier7Img, minTrees: 400, minReferrals: 700, processingDays: 2, weeklyLimit: 200000, color: 'hsl(45 90% 50%)', darkColor: 'hsl(45 90% 38%)', description: "400 daraxt + 700 referal. Eng tez — 2 ish kuni. Haftasiga 200,000 tanga!" },
+  { id: 1, name: 'Sprout', image: tier1Img, minTrees: 0, minReferrals: 0, processingDays: 7, weeklyLimit: 17000, color: 'hsl(145 35% 55%)', darkColor: 'hsl(145 35% 40%)', description: "Boshlang'ich daraja. So'rovlar 7 ish kunida ko'rib chiqiladi." },
+  { id: 2, name: 'Greenleaf', image: tier2Img, minTrees: 15, minReferrals: 20, processingDays: 6, weeklyLimit: 25500, color: 'hsl(120 40% 50%)', darkColor: 'hsl(120 40% 35%)', description: "15 daraxt + 20 referal. 6 ish kuni. Haftasiga 25,500 tanga." },
+  { id: 3, name: 'Bloom', image: tier3Img, minTrees: 30, minReferrals: 35, processingDays: 5, weeklyLimit: 42500, color: 'hsl(200 60% 50%)', darkColor: 'hsl(200 60% 35%)', description: "30 daraxt + 35 referal. 5 ish kuni. Haftasiga 42,500 tanga." },
+  { id: 4, name: 'Harvest', image: tier4Img, minTrees: 80, minReferrals: 100, processingDays: 4, weeklyLimit: 68000, color: 'hsl(38 80% 52%)', darkColor: 'hsl(38 80% 38%)', description: "80 daraxt + 100 referal. 4 ish kuni. Haftasiga 68,000 tanga." },
+  { id: 5, name: 'Evergreen', image: tier5Img, minTrees: 150, minReferrals: 270, processingDays: 3, weeklyLimit: 119000, color: 'hsl(280 60% 55%)', darkColor: 'hsl(280 60% 40%)', description: "150 daraxt + 270 referal. 3 ish kuni. Haftasiga 119,000 tanga." },
+  { id: 6, name: 'Ancient Oak', image: tier6Img, minTrees: 250, minReferrals: 450, processingDays: 2, weeklyLimit: 204000, color: 'hsl(0 75% 50%)', darkColor: 'hsl(0 75% 38%)', description: "250 daraxt + 450 referal. 2 ish kuni. Haftasiga 204,000 tanga." },
+  { id: 7, name: 'Mythic Tree', image: tier7Img, minTrees: 400, minReferrals: 700, processingDays: 2, weeklyLimit: 340000, color: 'hsl(45 90% 50%)', darkColor: 'hsl(45 90% 38%)', description: "400 daraxt + 700 referal. Eng tez — 2 ish kuni. Haftasiga 340,000 tanga!" },
 ];
 
 // Referral tiers — based on referral count only
@@ -151,3 +151,15 @@ export const TREE_CONFIGS: Record<TreeType, TreeConfig> = {
     emoji: '🫐',
   },
 };
+
+// Weekly limit reset helper — returns true if it's a new week (Monday reset)
+export function getWeekStartMonday(): string {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  const day = uzt.getDay();
+  const diff = day === 0 ? 6 : day - 1; // Monday = 0
+  const monday = new Date(uzt);
+  monday.setDate(uzt.getDate() - diff);
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+}
