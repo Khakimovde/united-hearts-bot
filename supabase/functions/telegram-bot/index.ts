@@ -312,14 +312,20 @@ async function handleContact(message: any) {
     reply_markup: { remove_keyboard: true },
   });
 
+  // Send channel sticker
+  await tgApi("sendSticker", {
+    chat_id: chatId,
+    sticker: "CAACAgIAAxkBAAEBJ2Nn69FRwuT3a5aQz3fKz0-6AAH5eQACVAADQbVWDLchiEMDleYzNgQ",
+  });
+
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `Endi rasmiy kanalimizga obuna bo'ling:\n@${CHANNEL_USERNAME}\n\nObuna bo'lgach, tekshiring:`,
+    text: `📢 Endi rasmiy kanalimizga obuna bo'ling:\n\n👉 @${CHANNEL_USERNAME}\n\n✅ Obuna bo'lgach, pastdagi "Tekshirish" tugmasini bosing:`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Kanalga o'tish", url: CHANNEL_LINK }],
-        [{ text: "Tekshirish", callback_data: "check_channel" }],
+        [{ text: "📢 Kanalga o'tish", url: CHANNEL_LINK }],
+        [{ text: "✅ Tekshirish", callback_data: "check_channel" }],
       ],
     },
   });
