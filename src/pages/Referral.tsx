@@ -179,9 +179,10 @@ export default function Referral() {
       <div className="card-flat p-4 mt-5">
         <h3 className="font-bold text-card-foreground text-sm mb-2">💡 Qanday ishlaydi?</h3>
         <div className="space-y-1.5 text-xs text-muted-foreground">
-          <p>• Do'stlaringizni taklif qiling va tanga ishlang</p>
-          <p>• Chaqirgan odamingiz ishlagan tangadan {currentLevel.percent}% olasiz</p>
+          <p>• Do'stlaringizni taklif qiling</p>
+          <p>• Do'stingiz ishlagan tangadan {currentLevel.percent}% foiz olasiz</p>
           <p>• Ko'proq referal = yuqori daraja = ko'proq foiz</p>
+          <p>• Tanga emas, faqat foizdan hisob yuritiladi</p>
         </div>
       </div>
     </div>

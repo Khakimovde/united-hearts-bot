@@ -420,8 +420,8 @@ export default function Payments() {
                 <span className="font-bold text-xs" style={{ color: 'hsl(145 50% 35%)' }}>{expectedDate}</span>
               </div>
             </div>
-            <button onClick={handleSubmitWithdraw} className="btn-cartoon w-full py-3 mt-4">
-              ✅ Tasdiqlash
+            <button onClick={handleSubmitWithdraw} disabled={submitting} className="btn-cartoon w-full py-3 mt-4 disabled:opacity-50">
+              {submitting ? '⏳ Yuborilmoqda...' : '✅ Tasdiqlash'}
             </button>
           </div>
         )}

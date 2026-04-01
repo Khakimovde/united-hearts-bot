@@ -36,7 +36,8 @@ export function AdModal() {
     setWatching(false);
 
     if (newCount >= totalRequired) {
-      setTimeout(() => completeAd(), 300);
+      // 3 second countdown before counting reward
+      setCountdown(3);
     }
   }, [watching, adsWatched, totalRequired, completeAd]);
 

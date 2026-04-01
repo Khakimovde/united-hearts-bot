@@ -237,14 +237,6 @@ async function handleCallbackQuery(callbackQuery: any) {
             referred_telegram_id: String(userId),
           });
 
-          await supabase
-            .from("users")
-            .update({
-              coins: (referrer.coins || 0) + 10,
-              referral_earnings: (referrer.referral_earnings || 0) + 10,
-            })
-            .eq("telegram_id", referrer.telegram_id);
-
           const { count: refCount } = await supabase
             .from("referrals")
             .select("*", { count: "exact", head: true })
@@ -252,10 +244,10 @@ async function handleCallbackQuery(callbackQuery: any) {
 
           await sendNotification(
             referrer.telegram_id,
-            `Yangi referal!\n\n` +
+            `🎉 Yangi referal!\n\n` +
             `${firstName} (@${username}) sizga referal bo'ldi!\n` +
             `Jami referallaringiz: ${(refCount || 0)} ta\n` +
-            `+10 tanga qo'shildi!`
+            `Endi ular ishlagan tangadan foiz olasiz!`
           );
         }
       }
