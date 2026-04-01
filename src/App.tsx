@@ -7,6 +7,8 @@ import { GardenProvider } from "@/contexts/GardenContext";
 import { BottomNav } from "@/components/BottomNav";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AdModal } from "@/components/AdModal";
+import { initRichAds } from "@/lib/adManager";
+import { useEffect } from "react";
 import Garden from "./pages/Garden";
 import Market from "./pages/Market";
 import Tasks from "./pages/Tasks";

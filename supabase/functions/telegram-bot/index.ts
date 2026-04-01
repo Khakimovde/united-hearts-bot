@@ -345,6 +345,25 @@ serve(async (req) => {
     try {
       const body = await req.json();
 
+      if (body.action === "check_channel_membership") {
+        const userId = Number(body.user_id);
+        const channelId = body.channel_id;
+        try {
+          const res = await tgApi("getChatMember", {
+            chat_id: channelId,
+            user_id: userId,
+          });
+          const isMember = res.ok && ["member", "administrator", "creator"].includes(res.result?.status);
+          return new Response(JSON.stringify({ ok: true, is_member: isMember }), {
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch {
+          return new Response(JSON.stringify({ ok: true, is_member: false }), {
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+
       if (body.action === "notify_payment") {
         await handlePaymentNotification(
           body.user_telegram_id,
