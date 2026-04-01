@@ -148,6 +148,12 @@ export default function Payments() {
     const amountUzs = Math.floor(amount * COIN_TO_UZS);
     const photoUrl = (window.Telegram?.WebApp?.initDataUnsafe as any)?.user?.photo_url || null;
 
+    // Deduct coins from user balance
+    await supabase
+      .from('users')
+      .update({ coins: userData.coins - amount } as any)
+      .eq('telegram_id', telegram.id);
+
     await supabase.from('payment_requests').insert({
       user_telegram_id: telegram.id,
       username: telegram.username,

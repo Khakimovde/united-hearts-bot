@@ -1,16 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
-  return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
-  );
-};
+export default function Index() {
+  const navigate = useNavigate();
+  const tg = window.Telegram?.WebApp;
 
-const Index = PlaceholderIndex;
+  useEffect(() => {
+    if (tg?.initData) {
+      // Telegram ichidan ochilgan — bog'ga yo'naltiramiz
+      navigate('/', { replace: true });
+    }
+  }, [tg, navigate]);
 
-export default Index;
+  if (!tg?.initData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 text-center" style={{ background: 'linear-gradient(180deg, hsl(20 30% 96%) 0%, hsl(15 20% 93%) 100%)' }}>
+        <div>
+          <div className="text-6xl mb-4">🌱</div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">BloomPay</h1>
+          <p className="text-muted-foreground text-sm mb-6">
+            Bu ilova faqat Telegram orqali ishlaydi.
+          </p>
+          <a
+            href="https://t.me/BloomPaybot"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-white text-sm"
+            style={{ background: 'linear-gradient(180deg, hsl(200 70% 50%) 0%, hsl(200 70% 40%) 100%)' }}
+          >
+            Telegram botni ochish
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}

@@ -89,7 +89,7 @@ export default function Market() {
           } : {}}
         >
           <Sprout className="w-4 h-4" />
-          Nihol olish
+          Ko'chat olish
         </button>
       </div>
 
