@@ -63,6 +63,21 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Admin Button */}
+      {isAdmin && (
+        <button
+          onClick={() => navigate('/admin')}
+          className="w-full mb-5 py-3.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+          style={{
+            background: 'linear-gradient(135deg, hsl(0 75% 50%), hsl(350 80% 45%))',
+            boxShadow: '0 4px 0 hsl(0 75% 35%), 0 6px 12px hsl(0 0% 0% / 0.15)',
+          }}
+        >
+          <Shield className="w-5 h-5" />
+          Admin Panel
+        </button>
+      )}
+
       {/* Stats */}
       <h3 className="text-sm font-bold text-muted-foreground mb-3 px-1">📊 Statistika</h3>
       <div className="space-y-2.5">

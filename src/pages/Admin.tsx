@@ -596,9 +596,59 @@ function WithdrawalsSection() {
         </div>
       )}
 
-      {pending.length === 0 && (
+      {pending.length === 0 && approved.length === 0 && (
         <div className="text-center py-8 bg-card rounded-2xl border border-border">
           <p className="text-sm text-muted-foreground">✅ Kutilayotgan so'rovlar yo'q</p>
+        </div>
+      )}
+
+      {/* Approved - waiting for payment */}
+      {approved.length > 0 && (
+        <div>
+          <h3 className="text-sm font-bold text-card-foreground mb-2">✅ Tasdiqlangan — to'lanishi kerak ({approved.length})</h3>
+          <div className="space-y-2.5">
+            {approved.map(w => {
+              const level = PAYMENT_LEVELS.find(l => l.id === w.payment_level_id) || PAYMENT_LEVELS[0];
+              return (
+                <div key={w.id} className="bg-card rounded-2xl border border-border p-4" style={{ borderColor: 'hsl(200 70% 50% / 0.3)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {w.photo_url ? (
+                        <img src={w.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <img src={level.image} alt={level.name} className="w-6 h-6 object-contain" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-card-foreground">{w.first_name} (@{w.username})</p>
+                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} • {new Date(w.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-accent">{w.amount.toLocaleString()} tanga</p>
+                      <p className="text-[10px]" style={{ color: 'hsl(145 50% 40%)' }}>{w.amount_uzs.toLocaleString()} UZS</p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mb-2">
+                    📱 {w.phone} • 💳 {w.card_number}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleMarkPaid(w.id)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
+                      style={{ background: 'hsl(145 40% 45%)' }}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> To'landi
+                    </button>
+                    <button onClick={() => setRejectingId(w.id)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
+                      style={{ background: 'hsl(0 75% 50%)' }}
+                    >
+                      <XCircle className="w-3.5 h-3.5" /> Rad etish
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
