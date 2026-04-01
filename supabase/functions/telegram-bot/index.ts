@@ -116,16 +116,20 @@ async function handleStart(chatId: number, userId: number, username: string, fir
       .eq("telegram_id", String(userId));
   }
 
+  // Send sticker first
+  await tgApi("sendSticker", {
+    chat_id: chatId,
+    sticker: "CAACAgIAAxkBAAEBJ2Nn69FRwuT3a5aQz3fKz0-6AAH5eQACVAADQbVWDLchiEMDleYzNgQ",
+  });
+
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `Assalomu alaykum, <b>${firstName}</b>! BloomPay ilovasiga xush kelibsiz.\n\n` +
-      `BloomPay — bu virtual bog'dorchilik o'yini. Daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\n` +
-      `Davom etish uchun foydalanuvchi shartlarini tasdiqlang:`,
+    text: `Assalomu alaykum, <b>${firstName}</b>! 🌱\n\nBloomPay ilovasiga xush kelibsiz!\n\n🌳 Virtual bog'dorchilik o'yini — daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\nDavom etish uchun foydalanuvchi shartlarini tasdiqlang:`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
-        [{ text: "Tasdiqlayman", callback_data: "accept_terms" }],
+        [{ text: "📋 Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
+        [{ text: "✅ Tasdiqlayman", callback_data: "accept_terms" }],
       ],
     },
   });
