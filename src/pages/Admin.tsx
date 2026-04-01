@@ -411,12 +411,36 @@ function WithdrawalsSection() {
   const handleApprove = async (id: string) => {
     const w = withdrawals.find(w => w.id === id);
     await supabase.from('payment_requests').update({
+      status: 'approved',
+    } as any).eq('id', id);
+    setWithdrawals(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' as const } : w));
+
+    // Send approval notification
+    if (w) {
+      try {
+        await supabase.functions.invoke('telegram-bot', {
+          body: {
+            action: 'notify_payment',
+            user_telegram_id: w.user_telegram_id,
+            amount: w.amount,
+            amount_uzs: w.amount_uzs,
+            status: 'approved',
+          },
+        });
+      } catch (e) {
+        console.error('Failed to send approval notification:', e);
+      }
+    }
+  };
+
+  const handleMarkPaid = async (id: string) => {
+    const w = withdrawals.find(w => w.id === id);
+    await supabase.from('payment_requests').update({
       status: 'paid',
       paid_date: new Date().toISOString(),
     } as any).eq('id', id);
     setWithdrawals(prev => prev.map(w => w.id === id ? { ...w, status: 'paid' as const, paid_date: new Date().toISOString() } : w));
 
-    // Send notification to user via bot
     if (w) {
       try {
         await supabase.functions.invoke('telegram-bot', {
