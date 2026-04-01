@@ -338,10 +338,46 @@ function UsersSection() {
             </button>
           </div>
           <button onClick={addTreeGrown}
-            className="w-full py-2 rounded-xl text-xs font-bold bg-muted text-card-foreground flex items-center justify-center gap-2"
+            className="w-full py-2 rounded-xl text-xs font-bold bg-muted text-card-foreground flex items-center justify-center gap-2 mb-3"
           >
-            <Gift className="w-3.5 h-3.5" /> Daraxt berish
+            <Gift className="w-3.5 h-3.5" /> Daraxt berish (+1)
           </button>
+
+          <h5 className="text-xs font-bold text-card-foreground mb-2">Meva berish</h5>
+          <div className="flex gap-2">
+            <select
+              value={fruitType}
+              onChange={(e) => setFruitType(e.target.value as any)}
+              className="bg-muted rounded-xl px-2 py-2 text-xs text-card-foreground"
+            >
+              <option value="apple">🍎 Olma</option>
+              <option value="pear">🍐 Nok</option>
+              <option value="grape">🍇 Uzum</option>
+              <option value="fig">🫐 Anjir</option>
+            </select>
+            <input
+              type="number"
+              value={fruitAmount}
+              onChange={(e) => setFruitAmount(e.target.value)}
+              placeholder="Miqdor"
+              className="flex-1 bg-muted rounded-xl px-3 py-2 text-xs text-card-foreground placeholder:text-muted-foreground"
+            />
+            <button onClick={async () => {
+              if (!selectedUser || !fruitAmount) return;
+              const key = `fruits_${fruitType}` as keyof DbUserRow;
+              const current = selectedUser[key] as number;
+              const newVal = Math.max(0, current + (parseInt(fruitAmount) || 0));
+              await supabase.from('users').update({ [`fruits_${fruitType}`]: newVal } as any).eq('telegram_id', selectedUser.telegram_id);
+              setSelectedUser({ ...selectedUser, [key]: newVal });
+              setUsers(prev => prev.map(u => u.telegram_id === selectedUser.telegram_id ? { ...u, [key]: newVal } : u));
+              setFruitAmount('');
+            }}
+              className="px-3 py-2 rounded-xl text-xs font-bold text-white flex items-center gap-1"
+              style={{ background: 'hsl(145 40% 45%)' }}
+            >
+              <Gift className="w-3.5 h-3.5" /> Berish
+            </button>
+          </div>
         </div>
       </div>
     );
