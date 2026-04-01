@@ -1,6 +1,8 @@
 import { useGarden } from '@/contexts/GardenContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { getPaymentLevel, getReferralLevel } from '@/lib/gameConfig';
+import { getPaymentLevel, getReferralLevel, ADMIN_TELEGRAM_ID } from '@/lib/gameConfig';
+import { useNavigate } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 import statTreesImg from '@/assets/stat-trees-grown.png';
 import statAdsImg from '@/assets/stat-ads-watched.png';
 
