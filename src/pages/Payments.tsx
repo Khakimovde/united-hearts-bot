@@ -259,9 +259,15 @@ export default function Payments() {
                   <p>So'rov sanasi: {formatDate(r.created_at)}</p>
                   <p>Daraja: {r.payment_level_name} • {userLevel.processingDays} ish kuni</p>
                   {r.status === 'pending' && (
-                    <p style={{ color: 'hsl(38 80% 45%)' }}>⏳ Darajangizni oshirsangiz tezroq to'lov olasiz!</p>
+                    <p style={{ color: 'hsl(38 80% 45%)' }}>⏳ So'rovingiz ko'rib chiqilmoqda...</p>
                   )}
-                  {r.paid_date && <p style={{ color: 'hsl(145 50% 35%)' }}>✅ To'landi: {formatDate(r.paid_date)}</p>}
+                  {r.status === 'approved' && (
+                    <p style={{ color: 'hsl(200 70% 45%)' }}>✅ Tasdiqlandi! Tez orada hisobingizga o'tkaziladi</p>
+                  )}
+                  {r.status === 'rejected' && (
+                    <p style={{ color: 'hsl(0 75% 50%)' }}>❌ Rad etildi</p>
+                  )}
+                  {r.paid_date && <p style={{ color: 'hsl(145 50% 35%)' }}>💰 To'landi: {formatDate(r.paid_date)}</p>}
                 </div>
               </div>
             ))
