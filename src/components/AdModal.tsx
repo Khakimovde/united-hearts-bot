@@ -13,8 +13,22 @@ export function AdModal() {
     if (!showingAd) {
       setAdsWatched(0);
       setWatching(false);
+      setCountdown(0);
     }
   }, [showingAd]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => {
+      const next = countdown - 1;
+      setCountdown(next);
+      if (next === 0) {
+        completeAd();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, completeAd]);
 
   // Auto-start first ad when modal opens
   useEffect(() => {
