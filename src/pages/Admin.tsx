@@ -406,7 +406,8 @@ function WithdrawalsSection() {
     : withdrawals.filter(w => w.payment_level_id === selectedLevel);
 
   const pending = filtered.filter(w => w.status === 'pending');
-  const processed = filtered.filter(w => w.status !== 'pending');
+  const approved = filtered.filter(w => w.status === 'approved');
+  const processed = filtered.filter(w => w.status === 'paid' || w.status === 'rejected');
 
   const handleApprove = async (id: string) => {
     const w = withdrawals.find(w => w.id === id);
