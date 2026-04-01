@@ -143,34 +143,49 @@ export default function Payments() {
     setShowWithdraw(true);
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmitWithdraw = async () => {
-    const amount = Number(withdrawAmount);
-    const amountUzs = Math.floor(amount * COIN_TO_UZS);
-    const photoUrl = (window.Telegram?.WebApp?.initDataUnsafe as any)?.user?.photo_url || null;
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const amount = Number(withdrawAmount);
+      const amountUzs = Math.floor(amount * COIN_TO_UZS);
+      const photoUrl = (window.Telegram?.WebApp?.initDataUnsafe as any)?.user?.photo_url || null;
 
-    // Deduct coins from user balance
-    await supabase
-      .from('users')
-      .update({ coins: userData.coins - amount } as any)
-      .eq('telegram_id', telegram.id);
+      // Deduct coins from user balance
+      await supabase
+        .from('users')
+        .update({ coins: userData.coins - amount } as any)
+        .eq('telegram_id', telegram.id);
 
-    await supabase.from('payment_requests').insert({
-      user_telegram_id: telegram.id,
-      username: telegram.username,
-      first_name: telegram.firstName,
-      photo_url: photoUrl,
-      amount,
-      amount_uzs: amountUzs,
-      phone,
-      card_number: rawCard,
-      card_last4: rawCard.slice(-4),
-      payment_level_id: userLevel.id,
-      payment_level_name: userLevel.name,
-      expected_date: expectedDate,
-    } as any);
+      await supabase.from('payment_requests').insert({
+        user_telegram_id: telegram.id,
+        username: telegram.username,
+        first_name: telegram.firstName,
+        photo_url: photoUrl,
+        amount,
+        amount_uzs: amountUzs,
+        phone,
+        card_number: rawCard,
+        card_last4: rawCard.slice(-4),
+        payment_level_id: userLevel.id,
+        payment_level_name: userLevel.name,
+        expected_date: expectedDate,
+      } as any);
 
-    setWithdrawStep('done');
-    loadMyRequests();
+      // Refresh user balance immediately
+      const { data: freshUser } = await supabase
+        .from('users')
+        .select('coins')
+        .eq('telegram_id', telegram.id)
+        .single();
+
+      setWithdrawStep('done');
+      loadMyRequests();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const formatDate = (dateStr: string) => {
