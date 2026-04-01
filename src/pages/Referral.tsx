@@ -3,7 +3,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { CoinBalance } from '@/components/CoinBalance';
 import { Gift, Copy, Users, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import { REFERRAL_REWARD, REFERRAL_LEVELS, getReferralLevel, getNextReferralLevel } from '@/lib/gameConfig';
+import { REFERRAL_LEVELS, getReferralLevel, getNextReferralLevel } from '@/lib/gameConfig';
 
 export default function Referral() {
   const { userData, shareReferral } = useGarden();

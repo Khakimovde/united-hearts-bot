@@ -131,6 +131,15 @@ export function AdModal() {
             ⏳ Reklama ko'rilmoqda...
           </p>
         )}
+
+        {countdown > 0 && (
+          <div className="text-center">
+            <p className="text-sm font-bold mb-1" style={{ color: 'hsl(38 80% 50%)' }}>
+              ⏳ {countdown} soniya...
+            </p>
+            <p className="text-xs text-muted-foreground">Mukofot hisoblanmoqda</p>
+          </div>
+        )}
       </div>
     </div>
   );
