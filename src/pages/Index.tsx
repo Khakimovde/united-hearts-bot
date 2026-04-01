@@ -6,13 +6,12 @@ export default function Index() {
   const tg = window.Telegram?.WebApp;
 
   useEffect(() => {
-    if (tg?.initData) {
-      // Telegram ichidan ochilgan — bog'ga yo'naltiramiz
+    if (tg?.initDataUnsafe?.user) {
       navigate('/', { replace: true });
     }
   }, [tg, navigate]);
 
-  if (!tg?.initData) {
+  if (!tg?.initDataUnsafe?.user) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6 text-center" style={{ background: 'linear-gradient(180deg, hsl(20 30% 96%) 0%, hsl(15 20% 93%) 100%)' }}>
         <div>
