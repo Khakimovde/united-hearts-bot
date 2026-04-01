@@ -138,18 +138,24 @@ async function handleStart(chatId: number, userId: number, username: string, fir
 }
 
 async function showMainMenu(chatId: number, firstName: string) {
+  // Send welcome sticker
+  await tgApi("sendSticker", {
+    chat_id: chatId,
+    sticker: "CAACAgIAAxkBAAEBJ2Nn69FRwuT3a5aQz3fKz0-6AAH5eQACVAADQbVWDLchiEMDleYzNgQ",
+  });
+
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `Xush kelibsiz, <b>${firstName}</b>!\n\nBloomPay — virtual bog'dorchilik o'yini. Daraxt eking, suv quying, meva yig'ing va tangalarni haqiqiy pulga aylantiring.`,
+    text: `Xush kelibsiz, <b>${firstName}</b>! 🎉\n\n🌱 <b>BloomPay</b> — virtual bog'dorchilik o'yini.\n\n🌳 Daraxt eking\n💧 Suv quying\n🍎 Meva yig'ing\n💰 Tangalarni haqiqiy pulga aylantiring!`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Ochish", web_app: { url: MINI_APP_URL } }],
+        [{ text: "🚀 Ochish", web_app: { url: MINI_APP_URL } }],
         [
-          { text: "Kanal", url: CHANNEL_LINK },
-          { text: "Aloqa", url: SUPPORT_BOT },
+          { text: "📢 Kanal", url: CHANNEL_LINK },
+          { text: "🆘 Aloqa", url: SUPPORT_BOT },
         ],
-        [{ text: "Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
+        [{ text: "📋 Foydalanuvchi shartlari", web_app: { url: TERMS_URL } }],
       ],
     },
   });
