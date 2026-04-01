@@ -6,6 +6,7 @@ export function AdModal() {
   const { showingAd, completeAd, adCount } = useGarden();
   const [adsWatched, setAdsWatched] = useState(0);
   const [watching, setWatching] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const totalRequired = adCount;
 
   useEffect(() => {
