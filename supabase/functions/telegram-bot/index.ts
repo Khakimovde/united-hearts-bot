@@ -122,9 +122,9 @@ async function handleStart(chatId: number, userId: number, username: string, fir
     sticker: "CAACAgIAAxkBAAEBJ2Nn69FRwuT3a5aQz3fKz0-6AAH5eQACVAADQbVWDLchiEMDleYzNgQ",
   });
 
-  await tgApi("sendMessage", {
+    await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `Assalomu alaykum, <b>${firstName}</b>! 🌱\n\nBloomPay ilovasiga xush kelibsiz!\n\n🌳 Virtual bog'dorchilik o'yini — daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\nDavom etish uchun foydalanuvchi shartlarini tasdiqlang:`,
+    text: `Assalomu alaykum, <b>${firstName}</b>! 🌱\n\nBloomPay ilovasiga xush kelibsiz!\n\n🌳 Virtual bog'dorchilik o'yini — daraxt o'stiring, meva yig'ing va haqiqiy pul ishlang!\n\nDavom etish uchun foydalanuvchi shartlarini tasdiqlang:\n\n⚠️ <i>Tasdiqlash tugmasini bosganingizda siz bot qoidalariga rozilik bildirgan bo'lasiz.</i>`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
@@ -237,14 +237,6 @@ async function handleCallbackQuery(callbackQuery: any) {
             referred_telegram_id: String(userId),
           });
 
-          await supabase
-            .from("users")
-            .update({
-              coins: (referrer.coins || 0) + 10,
-              referral_earnings: (referrer.referral_earnings || 0) + 10,
-            })
-            .eq("telegram_id", referrer.telegram_id);
-
           const { count: refCount } = await supabase
             .from("referrals")
             .select("*", { count: "exact", head: true })
@@ -252,10 +244,10 @@ async function handleCallbackQuery(callbackQuery: any) {
 
           await sendNotification(
             referrer.telegram_id,
-            `Yangi referal!\n\n` +
+            `🎉 Yangi referal!\n\n` +
             `${firstName} (@${username}) sizga referal bo'ldi!\n` +
             `Jami referallaringiz: ${(refCount || 0)} ta\n` +
-            `+10 tanga qo'shildi!`
+            `Endi ular ishlagan tangadan foiz olasiz!`
           );
         }
       }
@@ -312,14 +304,20 @@ async function handleContact(message: any) {
     reply_markup: { remove_keyboard: true },
   });
 
+  // Send channel sticker
+  await tgApi("sendSticker", {
+    chat_id: chatId,
+    sticker: "CAACAgIAAxkBAAEBJ2Nn69FRwuT3a5aQz3fKz0-6AAH5eQACVAADQbVWDLchiEMDleYzNgQ",
+  });
+
   await tgApi("sendMessage", {
     chat_id: chatId,
-    text: `Endi rasmiy kanalimizga obuna bo'ling:\n@${CHANNEL_USERNAME}\n\nObuna bo'lgach, tekshiring:`,
+    text: `📢 Endi rasmiy kanalimizga obuna bo'ling:\n\n👉 @${CHANNEL_USERNAME}\n\n✅ Obuna bo'lgach, pastdagi "Tekshirish" tugmasini bosing:`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Kanalga o'tish", url: CHANNEL_LINK }],
-        [{ text: "Tekshirish", callback_data: "check_channel" }],
+        [{ text: "📢 Kanalga o'tish", url: CHANNEL_LINK }],
+        [{ text: "✅ Tekshirish", callback_data: "check_channel" }],
       ],
     },
   });

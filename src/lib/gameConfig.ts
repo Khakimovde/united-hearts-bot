@@ -7,7 +7,8 @@ export const AD_DURATION_MS = 3000; // 3 seconds simulated
 export const AD_TASK_DAILY_MAX = 400;
 export const AD_TASK_COIN_PER_AD = 5; // coins per single ad watched
 
-export const REFERRAL_REWARD = 10; // coins per referral
+// Referral reward is percentage-based, not fixed coins
+// See REFERRAL_LEVELS for percent values
 
 export const ADMIN_TELEGRAM_ID = '5326022510';
 

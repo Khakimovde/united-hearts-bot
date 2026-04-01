@@ -6,14 +6,29 @@ export function AdModal() {
   const { showingAd, completeAd, adCount } = useGarden();
   const [adsWatched, setAdsWatched] = useState(0);
   const [watching, setWatching] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const totalRequired = adCount;
 
   useEffect(() => {
     if (!showingAd) {
       setAdsWatched(0);
       setWatching(false);
+      setCountdown(0);
     }
   }, [showingAd]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => {
+      const next = countdown - 1;
+      setCountdown(next);
+      if (next === 0) {
+        completeAd();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, completeAd]);
 
   // Auto-start first ad when modal opens
   useEffect(() => {
@@ -36,7 +51,8 @@ export function AdModal() {
     setWatching(false);
 
     if (newCount >= totalRequired) {
-      setTimeout(() => completeAd(), 300);
+      // 3 second countdown before counting reward
+      setCountdown(3);
     }
   }, [watching, adsWatched, totalRequired, completeAd]);
 
@@ -114,6 +130,15 @@ export function AdModal() {
           <p className="text-xs text-muted-foreground animate-pulse">
             ⏳ Reklama ko'rilmoqda...
           </p>
+        )}
+
+        {countdown > 0 && (
+          <div className="text-center">
+            <p className="text-sm font-bold mb-1" style={{ color: 'hsl(38 80% 50%)' }}>
+              ⏳ {countdown} soniya...
+            </p>
+            <p className="text-xs text-muted-foreground">Mukofot hisoblanmoqda</p>
+          </div>
         )}
       </div>
     </div>

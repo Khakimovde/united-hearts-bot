@@ -3,7 +3,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { CoinBalance } from '@/components/CoinBalance';
 import { Gift, Copy, Users, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import { REFERRAL_REWARD, REFERRAL_LEVELS, getReferralLevel, getNextReferralLevel } from '@/lib/gameConfig';
+import { REFERRAL_LEVELS, getReferralLevel, getNextReferralLevel } from '@/lib/gameConfig';
 
 export default function Referral() {
   const { userData, shareReferral } = useGarden();
@@ -87,7 +87,7 @@ export default function Referral() {
           <Gift className="w-5 h-5" style={{ color: 'hsl(0 75% 50%)' }} />
           <div>
             <h3 className="font-bold text-card-foreground text-sm">Do'stlaringizni taklif qiling</h3>
-            <p className="text-xs text-muted-foreground">Har bir do'st uchun {REFERRAL_REWARD} tanga</p>
+            <p className="text-xs text-muted-foreground">Do'stingiz ishlagan tangadan {currentLevel.percent}% olasiz</p>
           </div>
         </div>
         <div className="flex items-center gap-2 rounded-xl p-3 mb-3" style={{ background: 'hsl(20 15% 92%)' }}>
@@ -179,9 +179,10 @@ export default function Referral() {
       <div className="card-flat p-4 mt-5">
         <h3 className="font-bold text-card-foreground text-sm mb-2">💡 Qanday ishlaydi?</h3>
         <div className="space-y-1.5 text-xs text-muted-foreground">
-          <p>• Do'stlaringizni taklif qiling va tanga ishlang</p>
-          <p>• Chaqirgan odamingiz ishlagan tangadan {currentLevel.percent}% olasiz</p>
+          <p>• Do'stlaringizni taklif qiling</p>
+          <p>• Do'stingiz ishlagan tangadan {currentLevel.percent}% foiz olasiz</p>
           <p>• Ko'proq referal = yuqori daraja = ko'proq foiz</p>
+          <p>• Tanga emas, faqat foizdan hisob yuritiladi</p>
         </div>
       </div>
     </div>

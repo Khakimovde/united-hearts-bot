@@ -7,7 +7,7 @@ import React, {
   useRef,
 } from 'react';
 import type { Tree, TreeType, TreeStatus, UserData, FruitInventory } from '@/lib/types';
-import { TREE_CONFIGS, WATERING_INTERVAL_MS, AD_TASK_DAILY_MAX, AD_TASK_COIN_PER_AD, REFERRAL_REWARD, CHANNEL_TASKS } from '@/lib/gameConfig';
+import { TREE_CONFIGS, WATERING_INTERVAL_MS, AD_TASK_DAILY_MAX, AD_TASK_COIN_PER_AD, CHANNEL_TASKS } from '@/lib/gameConfig';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useSupabaseUser, type DbUser, type DbTree } from '@/hooks/useSupabaseUser';
 import { supabase } from '@/integrations/supabase/client';
