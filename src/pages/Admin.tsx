@@ -186,6 +186,8 @@ function UsersSection() {
   const [users, setUsers] = useState<DbUserRow[]>([]);
   const [selectedUser, setSelectedUser] = useState<DbUserRow | null>(null);
   const [coinAdjust, setCoinAdjust] = useState('');
+  const [fruitType, setFruitType] = useState<'apple' | 'pear' | 'grape' | 'fig'>('apple');
+  const [fruitAmount, setFruitAmount] = useState('');
   const [referralCount, setReferralCount] = useState(0);
 
   useEffect(() => {
@@ -336,10 +338,46 @@ function UsersSection() {
             </button>
           </div>
           <button onClick={addTreeGrown}
-            className="w-full py-2 rounded-xl text-xs font-bold bg-muted text-card-foreground flex items-center justify-center gap-2"
+            className="w-full py-2 rounded-xl text-xs font-bold bg-muted text-card-foreground flex items-center justify-center gap-2 mb-3"
           >
-            <Gift className="w-3.5 h-3.5" /> Daraxt berish
+            <Gift className="w-3.5 h-3.5" /> Daraxt berish (+1)
           </button>
+
+          <h5 className="text-xs font-bold text-card-foreground mb-2">Meva berish</h5>
+          <div className="flex gap-2">
+            <select
+              value={fruitType}
+              onChange={(e) => setFruitType(e.target.value as any)}
+              className="bg-muted rounded-xl px-2 py-2 text-xs text-card-foreground"
+            >
+              <option value="apple">🍎 Olma</option>
+              <option value="pear">🍐 Nok</option>
+              <option value="grape">🍇 Uzum</option>
+              <option value="fig">🫐 Anjir</option>
+            </select>
+            <input
+              type="number"
+              value={fruitAmount}
+              onChange={(e) => setFruitAmount(e.target.value)}
+              placeholder="Miqdor"
+              className="flex-1 bg-muted rounded-xl px-3 py-2 text-xs text-card-foreground placeholder:text-muted-foreground"
+            />
+            <button onClick={async () => {
+              if (!selectedUser || !fruitAmount) return;
+              const key = `fruits_${fruitType}` as keyof DbUserRow;
+              const current = selectedUser[key] as number;
+              const newVal = Math.max(0, current + (parseInt(fruitAmount) || 0));
+              await supabase.from('users').update({ [`fruits_${fruitType}`]: newVal } as any).eq('telegram_id', selectedUser.telegram_id);
+              setSelectedUser({ ...selectedUser, [key]: newVal });
+              setUsers(prev => prev.map(u => u.telegram_id === selectedUser.telegram_id ? { ...u, [key]: newVal } : u));
+              setFruitAmount('');
+            }}
+              className="px-3 py-2 rounded-xl text-xs font-bold text-white flex items-center gap-1"
+              style={{ background: 'hsl(145 40% 45%)' }}
+            >
+              <Gift className="w-3.5 h-3.5" /> Berish
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -406,9 +444,35 @@ function WithdrawalsSection() {
     : withdrawals.filter(w => w.payment_level_id === selectedLevel);
 
   const pending = filtered.filter(w => w.status === 'pending');
-  const processed = filtered.filter(w => w.status !== 'pending');
+  const approved = filtered.filter(w => w.status === 'approved');
+  const processed = filtered.filter(w => w.status === 'paid' || w.status === 'rejected');
 
   const handleApprove = async (id: string) => {
+    const w = withdrawals.find(w => w.id === id);
+    await supabase.from('payment_requests').update({
+      status: 'approved',
+    } as any).eq('id', id);
+    setWithdrawals(prev => prev.map(w => w.id === id ? { ...w, status: 'approved' as const } : w));
+
+    // Send approval notification
+    if (w) {
+      try {
+        await supabase.functions.invoke('telegram-bot', {
+          body: {
+            action: 'notify_payment',
+            user_telegram_id: w.user_telegram_id,
+            amount: w.amount,
+            amount_uzs: w.amount_uzs,
+            status: 'approved',
+          },
+        });
+      } catch (e) {
+        console.error('Failed to send approval notification:', e);
+      }
+    }
+  };
+
+  const handleMarkPaid = async (id: string) => {
     const w = withdrawals.find(w => w.id === id);
     await supabase.from('payment_requests').update({
       status: 'paid',
@@ -416,7 +480,6 @@ function WithdrawalsSection() {
     } as any).eq('id', id);
     setWithdrawals(prev => prev.map(w => w.id === id ? { ...w, status: 'paid' as const, paid_date: new Date().toISOString() } : w));
 
-    // Send notification to user via bot
     if (w) {
       try {
         await supabase.functions.invoke('telegram-bot', {
@@ -513,20 +576,23 @@ function WithdrawalsSection() {
                 <div key={w.id} className="bg-card rounded-2xl border border-border p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <img src={level.image} alt={level.name} className="w-6 h-6 object-contain" />
+                      {w.photo_url ? (
+                        <img src={w.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <img src={level.image} alt={level.name} className="w-6 h-6 object-contain" />
+                      )}
                       <div>
-                        <p className="text-sm font-medium text-card-foreground">@{w.username}</p>
-                        <p className="text-[10px] text-muted-foreground">{new Date(w.created_at).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-card-foreground">{w.first_name} (@{w.username})</p>
+                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} • {new Date(w.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-accent">{w.amount.toLocaleString()} tanga</p>
                       <p className="text-[10px]" style={{ color: 'hsl(145 50% 40%)' }}>{w.amount_uzs.toLocaleString()} UZS</p>
-                      <p className="text-[10px] text-muted-foreground">{w.card_number}</p>
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mb-2">
-                    📱 {w.phone}
+                    📱 {w.phone} • 💳 {w.card_number} • {level.name}
                   </div>
 
                   {rejectingId === w.id ? (
@@ -552,9 +618,9 @@ function WithdrawalsSection() {
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => handleApprove(w.id)}
                         className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
-                        style={{ background: 'hsl(145 40% 45%)' }}
+                        style={{ background: 'hsl(200 70% 50%)' }}
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> To'landi
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Tasdiqlash
                       </button>
                       <button onClick={() => setRejectingId(w.id)}
                         className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
@@ -571,9 +637,59 @@ function WithdrawalsSection() {
         </div>
       )}
 
-      {pending.length === 0 && (
+      {pending.length === 0 && approved.length === 0 && (
         <div className="text-center py-8 bg-card rounded-2xl border border-border">
           <p className="text-sm text-muted-foreground">✅ Kutilayotgan so'rovlar yo'q</p>
+        </div>
+      )}
+
+      {/* Approved - waiting for payment */}
+      {approved.length > 0 && (
+        <div>
+          <h3 className="text-sm font-bold text-card-foreground mb-2">✅ Tasdiqlangan — to'lanishi kerak ({approved.length})</h3>
+          <div className="space-y-2.5">
+            {approved.map(w => {
+              const level = PAYMENT_LEVELS.find(l => l.id === w.payment_level_id) || PAYMENT_LEVELS[0];
+              return (
+                <div key={w.id} className="bg-card rounded-2xl border border-border p-4" style={{ borderColor: 'hsl(200 70% 50% / 0.3)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {w.photo_url ? (
+                        <img src={w.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <img src={level.image} alt={level.name} className="w-6 h-6 object-contain" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-card-foreground">{w.first_name} (@{w.username})</p>
+                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} • {new Date(w.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-accent">{w.amount.toLocaleString()} tanga</p>
+                      <p className="text-[10px]" style={{ color: 'hsl(145 50% 40%)' }}>{w.amount_uzs.toLocaleString()} UZS</p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mb-2">
+                    📱 {w.phone} • 💳 {w.card_number}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleMarkPaid(w.id)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
+                      style={{ background: 'hsl(145 40% 45%)' }}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> To'landi
+                    </button>
+                    <button onClick={() => setRejectingId(w.id)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
+                      style={{ background: 'hsl(0 75% 50%)' }}
+                    >
+                      <XCircle className="w-3.5 h-3.5" /> Rad etish
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

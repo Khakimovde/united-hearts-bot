@@ -38,10 +38,10 @@ function getExpectedDate(processingDays: number): string {
 type WithdrawStep = 'phone' | 'card' | 'amount' | 'confirm' | 'done';
 
 const STATUS_CONFIG = {
-  pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: "So'rov yuborildi" },
-  approved: { bg: 'hsl(200 70% 50%)', text: 'hsl(0 0% 100%)', label: "Tasdiqlandi • O'tkazilmoqda" },
-  paid: { bg: 'hsl(145 50% 45%)', text: 'hsl(0 0% 100%)', label: "To'landi ✓" },
-  rejected: { bg: 'hsl(0 70% 50%)', text: 'hsl(0 0% 100%)', label: 'Rad etildi' },
+  pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: "⏳ So'rov yuborildi" },
+  approved: { bg: 'hsl(200 70% 50%)', text: 'hsl(0 0% 100%)', label: "✅ Tasdiqlandi" },
+  paid: { bg: 'hsl(145 50% 45%)', text: 'hsl(0 0% 100%)', label: "💰 To'landi" },
+  rejected: { bg: 'hsl(0 70% 50%)', text: 'hsl(0 0% 100%)', label: '❌ Rad etildi' },
 } as const;
 
 interface PaymentRecord {
@@ -259,9 +259,15 @@ export default function Payments() {
                   <p>So'rov sanasi: {formatDate(r.created_at)}</p>
                   <p>Daraja: {r.payment_level_name} • {userLevel.processingDays} ish kuni</p>
                   {r.status === 'pending' && (
-                    <p style={{ color: 'hsl(38 80% 45%)' }}>⏳ Darajangizni oshirsangiz tezroq to'lov olasiz!</p>
+                    <p style={{ color: 'hsl(38 80% 45%)' }}>⏳ So'rovingiz ko'rib chiqilmoqda...</p>
                   )}
-                  {r.paid_date && <p style={{ color: 'hsl(145 50% 35%)' }}>✅ To'landi: {formatDate(r.paid_date)}</p>}
+                  {r.status === 'approved' && (
+                    <p style={{ color: 'hsl(200 70% 45%)' }}>✅ Tasdiqlandi! Tez orada hisobingizga o'tkaziladi</p>
+                  )}
+                  {r.status === 'rejected' && (
+                    <p style={{ color: 'hsl(0 75% 50%)' }}>❌ Rad etildi</p>
+                  )}
+                  {r.paid_date && <p style={{ color: 'hsl(145 50% 35%)' }}>💰 To'landi: {formatDate(r.paid_date)}</p>}
                 </div>
               </div>
             ))

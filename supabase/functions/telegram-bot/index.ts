@@ -315,7 +315,14 @@ async function handleContact(message: any) {
 }
 
 async function handlePaymentNotification(userTelegramId: string, amount: number, amountUzs: number, status: string) {
-  if (status === "paid") {
+  if (status === "approved") {
+    await sendNotification(
+      userTelegramId,
+      `✅ <b>So'rovingiz tasdiqlandi!</b>\n\n` +
+      `💰 ${amount.toLocaleString()} tanga (${amountUzs.toLocaleString()} UZS) to'lov so'rovingiz tasdiqlandi.\n\n` +
+      `⏳ Tez orada hisobingizga o'tkaziladi.`
+    );
+  } else if (status === "paid") {
     await sendNotification(
       userTelegramId,
       `💰 <b>To'lov amalga oshirildi!</b>\n\n` +
