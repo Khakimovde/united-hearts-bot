@@ -576,20 +576,23 @@ function WithdrawalsSection() {
                 <div key={w.id} className="bg-card rounded-2xl border border-border p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <img src={level.image} alt={level.name} className="w-6 h-6 object-contain" />
+                      {w.photo_url ? (
+                        <img src={w.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <img src={level.image} alt={level.name} className="w-6 h-6 object-contain" />
+                      )}
                       <div>
-                        <p className="text-sm font-medium text-card-foreground">@{w.username}</p>
-                        <p className="text-[10px] text-muted-foreground">{new Date(w.created_at).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-card-foreground">{w.first_name} (@{w.username})</p>
+                        <p className="text-[10px] text-muted-foreground">ID: {w.user_telegram_id} • {new Date(w.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-accent">{w.amount.toLocaleString()} tanga</p>
                       <p className="text-[10px]" style={{ color: 'hsl(145 50% 40%)' }}>{w.amount_uzs.toLocaleString()} UZS</p>
-                      <p className="text-[10px] text-muted-foreground">{w.card_number}</p>
                     </div>
                   </div>
                   <div className="text-[10px] text-muted-foreground mb-2">
-                    📱 {w.phone}
+                    📱 {w.phone} • 💳 {w.card_number} • {level.name}
                   </div>
 
                   {rejectingId === w.id ? (
