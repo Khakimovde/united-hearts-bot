@@ -577,9 +577,9 @@ function WithdrawalsSection() {
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => handleApprove(w.id)}
                         className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
-                        style={{ background: 'hsl(145 40% 45%)' }}
+                        style={{ background: 'hsl(200 70% 50%)' }}
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> To'landi
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Tasdiqlash
                       </button>
                       <button onClick={() => setRejectingId(w.id)}
                         className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
