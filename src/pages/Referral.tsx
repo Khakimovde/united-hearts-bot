@@ -87,7 +87,7 @@ export default function Referral() {
           <Gift className="w-5 h-5" style={{ color: 'hsl(0 75% 50%)' }} />
           <div>
             <h3 className="font-bold text-card-foreground text-sm">Do'stlaringizni taklif qiling</h3>
-            <p className="text-xs text-muted-foreground">Har bir do'st uchun {REFERRAL_REWARD} tanga</p>
+            <p className="text-xs text-muted-foreground">Do'stingiz ishlagan tangadan {currentLevel.percent}% olasiz</p>
           </div>
         </div>
         <div className="flex items-center gap-2 rounded-xl p-3 mb-3" style={{ background: 'hsl(20 15% 92%)' }}>
