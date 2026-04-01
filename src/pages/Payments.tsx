@@ -38,10 +38,10 @@ function getExpectedDate(processingDays: number): string {
 type WithdrawStep = 'phone' | 'card' | 'amount' | 'confirm' | 'done';
 
 const STATUS_CONFIG = {
-  pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: "So'rov yuborildi" },
-  approved: { bg: 'hsl(200 70% 50%)', text: 'hsl(0 0% 100%)', label: "Tasdiqlandi • O'tkazilmoqda" },
-  paid: { bg: 'hsl(145 50% 45%)', text: 'hsl(0 0% 100%)', label: "To'landi ✓" },
-  rejected: { bg: 'hsl(0 70% 50%)', text: 'hsl(0 0% 100%)', label: 'Rad etildi' },
+  pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: "⏳ So'rov yuborildi" },
+  approved: { bg: 'hsl(200 70% 50%)', text: 'hsl(0 0% 100%)', label: "✅ Tasdiqlandi" },
+  paid: { bg: 'hsl(145 50% 45%)', text: 'hsl(0 0% 100%)', label: "💰 To'landi" },
+  rejected: { bg: 'hsl(0 70% 50%)', text: 'hsl(0 0% 100%)', label: '❌ Rad etildi' },
 } as const;
 
 interface PaymentRecord {
