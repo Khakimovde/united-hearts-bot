@@ -356,18 +356,21 @@ serve(async (req) => {
       if (body.action === "check_channel_membership") {
         const userId = Number(body.user_id);
         const channelId = body.channel_id;
+        console.log(`Checking membership: user=${userId}, channel=${channelId}`);
         try {
           const res = await tgApi("getChatMember", {
             chat_id: channelId,
             user_id: userId,
           });
+          console.log(`getChatMember result:`, JSON.stringify(res));
           const isMember = res.ok && ["member", "administrator", "creator"].includes(res.result?.status);
           return new Response(JSON.stringify({ ok: true, is_member: isMember }), {
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
           });
-        } catch {
+        } catch (e) {
+          console.error("check_channel_membership error:", e);
           return new Response(JSON.stringify({ ok: true, is_member: false }), {
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
           });
         }
       }
