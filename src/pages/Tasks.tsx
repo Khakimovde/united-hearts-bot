@@ -133,7 +133,7 @@ export default function Tasks() {
       // Update coins
       const { data: currentUser } = await supabase
         .from('users')
-        .select('coins')
+        .select('coins, referred_by')
         .eq('telegram_id', telegram.id)
         .single();
 
@@ -141,6 +141,30 @@ export default function Tasks() {
         await supabase.from('users').update({
           coins: (currentUser.coins as number) + reward,
         } as any).eq('telegram_id', telegram.id);
+
+        // Award referral commission
+        if (currentUser.referred_by) {
+          const { data: referrer } = await supabase
+            .from('users')
+            .select('telegram_id, coins, referral_earnings')
+            .eq('referral_code', currentUser.referred_by as string)
+            .maybeSingle();
+          if (referrer) {
+            const { count: refCount } = await supabase
+              .from('referrals')
+              .select('*', { count: 'exact', head: true })
+              .eq('referrer_telegram_id', referrer.telegram_id);
+            const { getReferralLevel } = await import('@/lib/gameConfig');
+            const level = getReferralLevel(refCount || 0);
+            const commission = Math.floor(reward * level.percent / 100);
+            if (commission > 0) {
+              await supabase.from('users').update({
+                coins: (referrer.coins as number) + commission,
+                referral_earnings: (referrer.referral_earnings as number) + commission,
+              } as any).eq('telegram_id', referrer.telegram_id);
+            }
+          }
+        }
       }
 
       setChannelsDoneIds(prev => [...prev, channelId]);
