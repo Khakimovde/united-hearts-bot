@@ -28,6 +28,7 @@ export interface DbUser {
   referral_code: string;
   referred_by: string | null;
   referral_earnings: number;
+  referral_commission_carry: number;
   created_at: string;
   updated_at: string;
 }

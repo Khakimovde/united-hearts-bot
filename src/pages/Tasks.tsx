@@ -5,6 +5,7 @@ import { AD_TASK_DAILY_MAX, AD_TASK_COIN_PER_AD } from '@/lib/gameConfig';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegram } from '@/hooks/useTelegram';
+import { calculateReferralPayout } from '@/lib/referral';
 
 import taskAdImg from '@/assets/task-ad.png';
 import taskChannelImg from '@/assets/task-channel.png';
@@ -146,7 +147,7 @@ export default function Tasks() {
         if (currentUser.referred_by) {
           const { data: referrer } = await supabase
             .from('users')
-            .select('telegram_id, coins, referral_earnings')
+            .select('telegram_id, coins, referral_earnings, referral_commission_carry')
             .eq('referral_code', currentUser.referred_by as string)
             .maybeSingle();
           if (referrer) {
@@ -156,11 +157,13 @@ export default function Tasks() {
               .eq('referrer_telegram_id', referrer.telegram_id);
             const { getReferralLevel } = await import('@/lib/gameConfig');
             const level = getReferralLevel(refCount || 0);
-            const commission = Math.floor(reward * level.percent / 100);
-            if (commission > 0) {
+            const currentCarry = (referrer as any).referral_commission_carry ?? 0;
+            const { payoutCoins, nextCarry } = calculateReferralPayout(reward, level.percent, currentCarry);
+            if (payoutCoins > 0 || nextCarry !== currentCarry) {
               await supabase.from('users').update({
-                coins: (referrer.coins as number) + commission,
-                referral_earnings: (referrer.referral_earnings as number) + commission,
+                coins: (referrer.coins as number) + payoutCoins,
+                referral_earnings: (referrer.referral_earnings as number) + payoutCoins,
+                referral_commission_carry: nextCarry,
               } as any).eq('telegram_id', referrer.telegram_id);
             }
           }

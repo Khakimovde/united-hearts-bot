@@ -14,6 +14,44 @@ const CHANNEL_LINK = "https://t.me/BloomPayuz";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function normalizeChannelIdentifier(channelId: string) {
+  const trimmed = channelId.trim();
+  if (!trimmed) return "";
+  if (/^-?\d+$/.test(trimmed)) return trimmed;
+
+  const normalized = trimmed
+    .replace(/^https?:\/\/(t|telegram)\.me\//i, "")
+    .replace(/^(t|telegram)\.me\//i, "")
+    .replace(/^@/, "")
+    .split(/[/?#]/)[0]
+    .trim();
+
+  return normalized ? `@${normalized}` : "";
+}
+
+async function resolveChannelChatId(channelId: string) {
+  const normalized = normalizeChannelIdentifier(channelId);
+  if (!normalized || /^-?\d+$/.test(normalized)) return normalized || channelId;
+
+  const chatInfo = await tgApi("getChat", { chat_id: normalized });
+  if (chatInfo.ok && chatInfo.result?.id) return chatInfo.result.id;
+
+  return normalized;
+}
+
 async function tgApi(method: string, body: Record<string, unknown>) {
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
     method: "POST",
@@ -77,10 +115,11 @@ async function setUserStep(userId: number, step: string, extra?: Record<string, 
     .eq("telegram_id", String(userId));
 }
 
-async function checkChannelMembership(userId: number): Promise<boolean> {
+async function checkChannelMembership(userId: number, channelId: string = `@${CHANNEL_USERNAME}`): Promise<boolean> {
   try {
+    const resolvedChannelId = await resolveChannelChatId(channelId);
     const res = await tgApi("getChatMember", {
-      chat_id: `@${CHANNEL_USERNAME}`,
+      chat_id: resolvedChannelId,
       user_id: userId,
     });
     if (res.ok) {
@@ -349,29 +388,31 @@ async function handlePaymentNotification(userTelegramId: string, amount: number,
 }
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (req.method === "POST") {
     try {
       const body = await req.json();
 
       if (body.action === "check_channel_membership") {
         const userId = Number(body.user_id);
-        const channelId = body.channel_id;
-        console.log(`Checking membership: user=${userId}, channel=${channelId}`);
+        const channelId = String(body.channel_id || `@${CHANNEL_USERNAME}`);
         try {
+          const normalizedChannelId = normalizeChannelIdentifier(channelId);
+          const resolvedChannelId = await resolveChannelChatId(channelId);
+          console.log(`Checking membership: user=${userId}, channel=${channelId}, normalized=${normalizedChannelId}, resolved=${resolvedChannelId}`);
           const res = await tgApi("getChatMember", {
-            chat_id: channelId,
+            chat_id: resolvedChannelId,
             user_id: userId,
           });
           console.log(`getChatMember result:`, JSON.stringify(res));
           const isMember = res.ok && ["member", "administrator", "creator"].includes(res.result?.status);
-          return new Response(JSON.stringify({ ok: true, is_member: isMember }), {
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-          });
+          return jsonResponse({ ok: true, is_member: isMember, checked_channel_id: normalizedChannelId || channelId });
         } catch (e) {
           console.error("check_channel_membership error:", e);
-          return new Response(JSON.stringify({ ok: true, is_member: false }), {
-            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-          });
+          return jsonResponse({ ok: true, is_member: false });
         }
       }
 
@@ -382,9 +423,7 @@ serve(async (req) => {
           body.amount_uzs,
           body.status
         );
-        return new Response(JSON.stringify({ ok: true }), {
-          headers: { "Content-Type": "application/json" },
-        });
+        return jsonResponse({ ok: true });
       }
 
       const update = body;
@@ -449,14 +488,10 @@ serve(async (req) => {
         await handleCallbackQuery(update.callback_query);
       }
 
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return jsonResponse({ ok: true });
     } catch (err) {
       console.error("Error processing update:", err);
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return jsonResponse({ ok: true });
     }
   }
 
@@ -468,14 +503,10 @@ serve(async (req) => {
         url: webhookUrl,
         allowed_updates: ["message", "callback_query"],
       });
-      return new Response(JSON.stringify(result), {
-        headers: { "Content-Type": "application/json" },
-      });
+       return jsonResponse(result);
     }
-    return new Response(JSON.stringify({ status: "Bot is running" }), {
-      headers: { "Content-Type": "application/json" },
-    });
+     return jsonResponse({ status: "Bot is running" });
   }
 
-  return new Response("Method not allowed", { status: 405 });
+   return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 });

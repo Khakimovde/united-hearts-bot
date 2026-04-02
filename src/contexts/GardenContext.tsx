@@ -6,12 +6,13 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
-import type { Tree, TreeType, TreeStatus, UserData, FruitInventory } from '@/lib/types';
+import type { Tree, TreeType, TreeStatus, UserData } from '@/lib/types';
 import { TREE_CONFIGS, WATERING_INTERVAL_MS, AD_TASK_DAILY_MAX, AD_TASK_COIN_PER_AD, CHANNEL_TASKS } from '@/lib/gameConfig';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useSupabaseUser, type DbUser, type DbTree } from '@/hooks/useSupabaseUser';
 import { supabase } from '@/integrations/supabase/client';
 import { getReferralLevel } from '@/lib/gameConfig';
+import { calculateReferralPayout } from '@/lib/referral';
 
 function getUZTDateString(): string {
   const now = new Date();
@@ -106,7 +107,7 @@ export function getTreeStatus(tree: Tree): TreeStatus {
 
 export function GardenProvider({ children }: { children: React.ReactNode }) {
   const telegram = useTelegram();
-  const { dbUser, trees: dbTrees, loading: dbLoading, updateUser, addTree, updateTree: updateDbTree, refreshUser, refreshTrees } = useSupabaseUser();
+  const { dbUser, trees: dbTrees, loading: dbLoading, updateUser, addTree, updateTree: updateDbTree, refreshTrees } = useSupabaseUser();
 
   const [currentTreeIndex, setCurrentTreeIndex] = useState(0);
   const [showingAd, setShowingAd] = useState(false);
@@ -118,27 +119,27 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
   // Award referral commission to referrer
   const awardReferralCommission = useCallback(async (earnedCoins: number) => {
     if (!dbUser || !dbUser.referred_by || earnedCoins <= 0) return;
-    // Find the referrer
     const { data: referrer } = await supabase
       .from('users')
-      .select('telegram_id, coins, referral_earnings')
+      .select('telegram_id, coins, referral_earnings, referral_commission_carry')
       .eq('referral_code', dbUser.referred_by)
       .maybeSingle();
     if (!referrer) return;
 
-    // Count referrer's referrals to determine their level
     const { count: refCount } = await supabase
       .from('referrals')
       .select('*', { count: 'exact', head: true })
       .eq('referrer_telegram_id', referrer.telegram_id);
 
     const referrerLevel = getReferralLevel(refCount || 0);
-    const commission = Math.floor(earnedCoins * referrerLevel.percent / 100);
-    if (commission <= 0) return;
+    const currentCarry = (referrer as any).referral_commission_carry ?? 0;
+    const { payoutCoins, nextCarry } = calculateReferralPayout(earnedCoins, referrerLevel.percent, currentCarry);
+    if (payoutCoins <= 0 && nextCarry === currentCarry) return;
 
     await supabase.from('users').update({
-      coins: (referrer.coins as number) + commission,
-      referral_earnings: (referrer.referral_earnings as number) + commission,
+      coins: (referrer.coins as number) + payoutCoins,
+      referral_earnings: (referrer.referral_earnings as number) + payoutCoins,
+      referral_commission_carry: nextCarry,
     } as any).eq('telegram_id', referrer.telegram_id);
   }, [dbUser]);
 
@@ -175,12 +176,13 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
         referral: { referralCode: '', referredUsers: [], totalEarnings: 0 },
       };
 
-  userData.currentTreeIndex = currentTreeIndex;
+  const activeTreeIndex = userData.trees.findIndex((tree) => !tree.harvested);
+  userData.currentTreeIndex = activeTreeIndex >= 0 ? activeTreeIndex : currentTreeIndex;
 
-  const currentTree = userData.trees[currentTreeIndex] ?? null;
+  const currentTree = activeTreeIndex >= 0 ? userData.trees[activeTreeIndex] : null;
   const currentTreeStatus = currentTree ? getTreeStatus(currentTree) : null;
   const currentTreeConfig = currentTree ? TREE_CONFIGS[currentTree.type] : null;
-  const hasActiveTree = userData.trees.some((t) => !t.harvested);
+  const hasActiveTree = activeTreeIndex >= 0;
 
   const growthPercent = currentTree && currentTreeConfig
     ? (currentTree.wateringsCompleted / currentTreeConfig.wateringsRequired) * 100
@@ -211,7 +213,7 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
   const waterTree = useCallback(() => {
     if (!canWater || !currentTree || !dbUser) return;
     triggerAd(async () => {
-      const dbTreeId = dbTrees[currentTreeIndex]?.id;
+      const dbTreeId = activeTreeIndex >= 0 ? dbTrees[activeTreeIndex]?.id : undefined;
       if (!dbTreeId) return;
       const newCount = currentTree.wateringsCompleted + 1;
       const cfg = TREE_CONFIGS[currentTree.type];
@@ -227,12 +229,12 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
         } as any);
       }
     }, 6);
-  }, [canWater, currentTree, dbUser, currentTreeIndex, dbTrees, triggerAd, updateDbTree, updateUser]);
+  }, [canWater, currentTree, dbUser, activeTreeIndex, dbTrees, triggerAd, updateDbTree, updateUser]);
 
   const harvestTree = useCallback(async () => {
     if (!currentTree || currentTreeStatus !== 'fruiting' || !dbUser) return;
     const cfg = TREE_CONFIGS[currentTree.type];
-    const dbTreeId = dbTrees[currentTreeIndex]?.id;
+    const dbTreeId = activeTreeIndex >= 0 ? dbTrees[activeTreeIndex]?.id : undefined;
     if (!dbTreeId) return;
 
     await updateDbTree(dbTreeId, { harvested: true } as any);
@@ -242,7 +244,7 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
       [fruitKey]: (dbUser[fruitKey] as number) + cfg.fruitCount,
       total_fruits_harvested: dbUser.total_fruits_harvested + cfg.fruitCount,
     } as any);
-  }, [currentTree, currentTreeStatus, dbUser, dbTrees, currentTreeIndex, updateDbTree, updateUser]);
+  }, [currentTree, currentTreeStatus, dbUser, dbTrees, activeTreeIndex, updateDbTree, updateUser]);
 
   const buySapling = useCallback((type: TreeType): boolean => {
     if (hasActiveTree || !dbUser) return false;
