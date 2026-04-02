@@ -353,12 +353,14 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
     const sellAmount = Math.min(amount, available);
     if (sellAmount <= 0) return;
     const cfg = TREE_CONFIGS[type];
+    const earned = sellAmount * cfg.fruitValue;
 
     await updateUser({
       [fruitKey]: available - sellAmount,
-      coins: dbUser.coins + sellAmount * cfg.fruitValue,
+      coins: dbUser.coins + earned,
     } as any);
-  }, [dbUser, updateUser]);
+    await awardReferralCommission(earned);
+  }, [dbUser, updateUser, awardReferralCommission]);
 
   return (
     <GardenContext.Provider
