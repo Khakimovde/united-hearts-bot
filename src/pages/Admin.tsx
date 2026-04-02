@@ -741,10 +741,29 @@ function ChannelsSection() {
     if (data) setChannels(data as unknown as DbChannelTask[]);
   };
 
+  const normalizeChannelId = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (/^-?\d+$/.test(trimmed)) return trimmed;
+
+    const normalized = trimmed
+      .replace(/^https?:\/\/(t|telegram)\.me\//i, '')
+      .replace(/^(t|telegram)\.me\//i, '')
+      .replace(/^@/, '')
+      .split(/[/?#]/)[0]
+      .trim();
+
+    return normalized ? `@${normalized}` : '';
+  };
+
   const addChannel = async () => {
     if (!newChannelId.trim() || !newChannelName.trim()) return;
     setAdding(true);
-    const channelId = newChannelId.startsWith('@') ? newChannelId : `@${newChannelId}`;
+    const channelId = normalizeChannelId(newChannelId);
+    if (!channelId) {
+      setAdding(false);
+      return;
+    }
     await supabase.from('channel_tasks').insert({
       channel_id: channelId,
       channel_name: newChannelName.trim(),
