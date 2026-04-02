@@ -296,6 +296,7 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
         ad_task_ads_watched: newCount,
         ad_task_total_ads_watched: (dbUser.ad_task_total_ads_watched || 0) + 1,
       } as any);
+      await awardReferralCommission(AD_TASK_COIN_PER_AD);
     }, 1);
   }, [dbUser, triggerAd, updateUser]);
 
