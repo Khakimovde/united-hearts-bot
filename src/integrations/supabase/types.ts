@@ -252,6 +252,7 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           referral_code: string
+          referral_commission_carry: number
           referral_earnings: number
           referred_by: string | null
           telegram_id: string
@@ -277,6 +278,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           referral_code?: string
+          referral_commission_carry?: number
           referral_earnings?: number
           referred_by?: string | null
           telegram_id: string
@@ -302,6 +304,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           referral_code?: string
+          referral_commission_carry?: number
           referral_earnings?: number
           referred_by?: string | null
           telegram_id?: string
