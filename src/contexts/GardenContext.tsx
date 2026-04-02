@@ -115,7 +115,33 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
   const [referredUsers, setReferredUsers] = useState<string[]>([]);
   const [, tick] = useState(0);
 
-  // Load referrals
+  // Award referral commission to referrer
+  const awardReferralCommission = useCallback(async (earnedCoins: number) => {
+    if (!dbUser || !dbUser.referred_by || earnedCoins <= 0) return;
+    // Find the referrer
+    const { data: referrer } = await supabase
+      .from('users')
+      .select('telegram_id, coins, referral_earnings')
+      .eq('referral_code', dbUser.referred_by)
+      .maybeSingle();
+    if (!referrer) return;
+
+    // Count referrer's referrals to determine their level
+    const { count: refCount } = await supabase
+      .from('referrals')
+      .select('*', { count: 'exact', head: true })
+      .eq('referrer_telegram_id', referrer.telegram_id);
+
+    const referrerLevel = getReferralLevel(refCount || 0);
+    const commission = Math.floor(earnedCoins * referrerLevel.percent / 100);
+    if (commission <= 0) return;
+
+    await supabase.from('users').update({
+      coins: (referrer.coins as number) + commission,
+      referral_earnings: (referrer.referral_earnings as number) + commission,
+    } as any).eq('telegram_id', referrer.telegram_id);
+  }, [dbUser]);
+
   useEffect(() => {
     if (!dbUser) return;
     supabase
