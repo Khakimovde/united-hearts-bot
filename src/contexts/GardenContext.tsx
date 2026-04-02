@@ -11,6 +11,7 @@ import { TREE_CONFIGS, WATERING_INTERVAL_MS, AD_TASK_DAILY_MAX, AD_TASK_COIN_PER
 import { useTelegram } from '@/hooks/useTelegram';
 import { useSupabaseUser, type DbUser, type DbTree } from '@/hooks/useSupabaseUser';
 import { supabase } from '@/integrations/supabase/client';
+import { getReferralLevel } from '@/lib/gameConfig';
 
 function getUZTDateString(): string {
   const now = new Date();
