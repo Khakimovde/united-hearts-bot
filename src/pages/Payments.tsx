@@ -61,7 +61,7 @@ interface PaymentRecord {
 const COIN_TO_UZS = 5000 / 9000; // 9000 tanga = 5000 UZS
 
 export default function Payments() {
-  const { userData } = useGarden();
+  const { userData, setUserCoins, refreshUserData } = useGarden();
   const telegram = useTelegram();
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [expandedLevel, setExpandedLevel] = useState<number | null>(null);
@@ -153,36 +153,34 @@ export default function Payments() {
       const amountUzs = Math.floor(amount * COIN_TO_UZS);
       const photoUrl = (window.Telegram?.WebApp?.initDataUnsafe as any)?.user?.photo_url || null;
 
-      // Deduct coins from user balance
-      await supabase
-        .from('users')
-        .update({ coins: userData.coins - amount } as any)
-        .eq('telegram_id', telegram.id);
+      const { data, error } = await supabase.rpc('submit_payment_request', {
+        p_user_telegram_id: telegram.id,
+        p_username: telegram.username,
+        p_first_name: telegram.firstName,
+        p_photo_url: photoUrl,
+        p_amount: amount,
+        p_amount_uzs: amountUzs,
+        p_phone: phone,
+        p_card_number: rawCard,
+        p_card_last4: rawCard.slice(-4),
+        p_payment_level_id: userLevel.id,
+        p_payment_level_name: userLevel.name,
+        p_expected_date: expectedDate,
+      });
 
-      await supabase.from('payment_requests').insert({
-        user_telegram_id: telegram.id,
-        username: telegram.username,
-        first_name: telegram.firstName,
-        photo_url: photoUrl,
-        amount,
-        amount_uzs: amountUzs,
-        phone,
-        card_number: rawCard,
-        card_last4: rawCard.slice(-4),
-        payment_level_id: userLevel.id,
-        payment_level_name: userLevel.name,
-        expected_date: expectedDate,
-      } as any);
+      if (error) {
+        throw error;
+      }
 
-      // Refresh user balance immediately
-      const { data: freshUser } = await supabase
-        .from('users')
-        .select('coins')
-        .eq('telegram_id', telegram.id)
-        .single();
+      const remainingCoins = Number((data as { remaining_coins?: number } | null)?.remaining_coins);
+      if (Number.isFinite(remainingCoins)) {
+        setUserCoins(remainingCoins);
+      }
 
       setWithdrawStep('done');
-      loadMyRequests();
+      await Promise.all([loadMyRequests(), refreshUserData()]);
+    } catch (error) {
+      console.error('Withdrawal submit failed:', error);
     } finally {
       setSubmitting(false);
     }
