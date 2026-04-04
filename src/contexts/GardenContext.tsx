@@ -84,6 +84,8 @@ interface GardenContextType {
   verifyChannel: (channelId: string) => void;
   shareReferral: () => void;
   sellFruit: (type: TreeType, amount: number) => void;
+  setUserCoins: (coins: number) => void;
+  refreshUserData: () => Promise<void>;
   loading: boolean;
 }
 
@@ -107,7 +109,17 @@ export function getTreeStatus(tree: Tree): TreeStatus {
 
 export function GardenProvider({ children }: { children: React.ReactNode }) {
   const telegram = useTelegram();
-  const { dbUser, trees: dbTrees, loading: dbLoading, updateUser, addTree, updateTree: updateDbTree, refreshTrees } = useSupabaseUser();
+  const {
+    dbUser,
+    trees: dbTrees,
+    loading: dbLoading,
+    updateUser,
+    addTree,
+    updateTree: updateDbTree,
+    refreshUser,
+    refreshTrees,
+    setDbUser,
+  } = useSupabaseUser();
 
   const [currentTreeIndex, setCurrentTreeIndex] = useState(0);
   const [showingAd, setShowingAd] = useState(false);
@@ -209,6 +221,10 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
     adCallbackRef.current = null;
     cb?.();
   }, [dbUser, updateUser]);
+
+  const setUserCoins = useCallback((coins: number) => {
+    setDbUser((prev) => (prev ? { ...prev, coins } : prev));
+  }, [setDbUser]);
 
   const waterTree = useCallback(() => {
     if (!canWater || !currentTree || !dbUser) return;
@@ -389,6 +405,8 @@ export function GardenProvider({ children }: { children: React.ReactNode }) {
         verifyChannel,
         shareReferral,
         sellFruit,
+        setUserCoins,
+        refreshUserData: refreshUser,
         loading: dbLoading,
       }}
     >
