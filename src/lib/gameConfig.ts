@@ -4,8 +4,8 @@ export const WATERING_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 export const AD_DURATION_MS = 3000; // 3 seconds simulated
 
-export const AD_TASK_DAILY_MAX = 400;
-export const AD_TASK_COIN_PER_AD = 5; // coins per single ad watched
+export const AD_TASK_DAILY_MAX = 500;
+export const AD_TASK_COIN_PER_AD = 6; // coins per single ad watched
 
 // Referral reward is percentage-based, not fixed coins
 // See REFERRAL_LEVELS for percent values
