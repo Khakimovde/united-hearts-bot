@@ -38,7 +38,7 @@ export function TreeCard({ config, canAfford, onBuy, isFirstFree }: TreeCardProp
         <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{config.growthHours} soat</span>
           <span className="flex items-center gap-1"><Droplets className="w-3 h-3" />{config.wateringsRequired}x</span>
-          <span className="flex items-center gap-1">🍎 {config.fruitCount} ta</span>
+          <span className="flex items-center gap-1">{config.emoji} {config.fruitCount} ta</span>
         </div>
       </div>
 

@@ -4,8 +4,8 @@ export const WATERING_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 export const AD_DURATION_MS = 3000; // 3 seconds simulated
 
-export const AD_TASK_DAILY_MAX = 400;
-export const AD_TASK_COIN_PER_AD = 5; // coins per single ad watched
+export const AD_TASK_DAILY_MAX = 500;
+export const AD_TASK_COIN_PER_AD = 6; // coins per single ad watched
 
 // Referral reward is percentage-based, not fixed coins
 // See REFERRAL_LEVELS for percent values
@@ -132,23 +132,23 @@ export const TREE_CONFIGS: Record<TreeType, TreeConfig> = {
   grape: {
     type: 'grape',
     name: 'Uzum tokasi',
-    growthHours: 6,
-    wateringsRequired: 24,
-    fruitCount: 80,
+    growthHours: 5,
+    wateringsRequired: 20,
+    fruitCount: 90,
     fruitValue: 13,
     saplingCost: 800,
-    description: 'Mazali uzum. 80 ta meva, har biri 13 tanga.',
+    description: 'Mazali uzum. 90 ta meva, har biri 13 tanga.',
     emoji: '🍇',
   },
   fig: {
     type: 'fig',
     name: 'Anjir daraxti',
-    growthHours: 8,
-    wateringsRequired: 32,
-    fruitCount: 180,
+    growthHours: 7,
+    wateringsRequired: 28,
+    fruitCount: 215,
     fruitValue: 14,
     saplingCost: 2000,
-    description: 'Premium anjir. 180 ta meva, har biri 14 tanga.',
+    description: 'Premium anjir. 215 ta meva, har biri 14 tanga.',
     emoji: '🫐',
   },
 };
