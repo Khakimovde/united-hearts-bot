@@ -78,6 +78,7 @@ export type Database = {
           paid_date: string | null
           payment_level_id: number
           payment_level_name: string
+          payment_method: string
           phone: string
           photo_url: string | null
           rejection_reason: string | null
@@ -98,6 +99,7 @@ export type Database = {
           paid_date?: string | null
           payment_level_id?: number
           payment_level_name?: string
+          payment_method?: string
           phone?: string
           photo_url?: string | null
           rejection_reason?: string | null
@@ -118,6 +120,7 @@ export type Database = {
           paid_date?: string | null
           payment_level_id?: number
           payment_level_name?: string
+          payment_method?: string
           phone?: string
           photo_url?: string | null
           rejection_reason?: string | null
@@ -322,23 +325,42 @@ export type Database = {
     }
     Functions: {
       get_admin_stats: { Args: never; Returns: Json }
-      submit_payment_request: {
-        Args: {
-          p_amount: number
-          p_amount_uzs: number
-          p_card_last4: string
-          p_card_number: string
-          p_expected_date: string
-          p_first_name: string
-          p_payment_level_id: number
-          p_payment_level_name: string
-          p_phone: string
-          p_photo_url: string
-          p_user_telegram_id: string
-          p_username: string
-        }
-        Returns: Json
-      }
+      submit_payment_request:
+        | {
+            Args: {
+              p_amount: number
+              p_amount_uzs: number
+              p_card_last4: string
+              p_card_number: string
+              p_expected_date: string
+              p_first_name: string
+              p_payment_level_id: number
+              p_payment_level_name: string
+              p_phone: string
+              p_photo_url: string
+              p_user_telegram_id: string
+              p_username: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_amount_uzs: number
+              p_card_last4: string
+              p_card_number: string
+              p_expected_date: string
+              p_first_name: string
+              p_payment_level_id: number
+              p_payment_level_name: string
+              p_payment_method?: string
+              p_phone: string
+              p_photo_url: string
+              p_user_telegram_id: string
+              p_username: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       [_ in never]: never
