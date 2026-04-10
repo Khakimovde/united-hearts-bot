@@ -1,15 +1,22 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Flower2, Store, ListChecks, Users, Wallet, User } from 'lucide-react';
+import { Flower2, Store, ListChecks, Users, Wallet, User, type LucideIcon } from 'lucide-react';
 
-const tabs = [
+interface TabItem {
+  path: string;
+  icon?: LucideIcon;
+  label: string;
+  emoji?: string;
+}
+
+const tabs: TabItem[] = [
   { path: '/', icon: Flower2, label: "Bog'" },
   { path: '/market', icon: Store, label: 'Bozor' },
-  { path: '/lottery', icon: null, label: 'Lotereya', emoji: '🎰' },
+  { path: '/lottery', label: 'Lotereya', emoji: '🎰' },
   { path: '/tasks', icon: ListChecks, label: 'Vazifalar' },
   { path: '/referral', icon: Users, label: 'Referal' },
   { path: '/payments', icon: Wallet, label: "To'lovlar" },
   { path: '/profile', icon: User, label: 'Profil' },
-] as const;
+];
 
 export function BottomNav() {
   const { pathname } = useLocation();
