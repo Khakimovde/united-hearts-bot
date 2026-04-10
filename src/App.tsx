@@ -15,6 +15,7 @@ import Tasks from "./pages/Tasks";
 import Referral from "./pages/Referral";
 import Payments from "./pages/Payments";
 import Profile from "./pages/Profile";
+import Lottery from "./pages/Lottery";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
