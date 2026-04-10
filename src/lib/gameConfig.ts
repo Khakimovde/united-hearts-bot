@@ -104,7 +104,7 @@ export function getNextReferralLevel(current: ReferralLevel): ReferralLevel | nu
   return idx < REFERRAL_LEVELS.length - 1 ? REFERRAL_LEVELS[idx + 1] : null;
 }
 
-export const MIN_WITHDRAW = 11000;
+export const MIN_WITHDRAW = 9000;
 
 export const TREE_CONFIGS: Record<TreeType, TreeConfig> = {
   apple: {
