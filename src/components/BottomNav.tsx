@@ -4,6 +4,7 @@ import { Flower2, Store, ListChecks, Users, Wallet, User } from 'lucide-react';
 const tabs = [
   { path: '/', icon: Flower2, label: "Bog'" },
   { path: '/market', icon: Store, label: 'Bozor' },
+  { path: '/lottery', icon: null, label: 'Lotereya', emoji: '🎰' },
   { path: '/tasks', icon: ListChecks, label: 'Vazifalar' },
   { path: '/referral', icon: Users, label: 'Referal' },
   { path: '/payments', icon: Wallet, label: "To'lovlar" },
@@ -25,22 +26,23 @@ export function BottomNav() {
       }}
     >
       <div className="flex justify-around py-1">
-        {tabs.map(({ path, icon: Icon, label }) => {
+        {tabs.map(({ path, icon: Icon, label, emoji }) => {
           const active = pathname === path;
           return (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`
-                flex flex-col items-center gap-0.5 py-1 px-1.5 rounded-xl
-                transition-all duration-200
-              `}
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200"
               style={{
                 color: active ? 'hsl(0 75% 50%)' : 'hsl(25 8% 55%)',
               }}
             >
-              <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
-              <span className="text-[9px] font-bold leading-tight">{label}</span>
+              {emoji ? (
+                <span className="text-base leading-5">{emoji}</span>
+              ) : Icon ? (
+                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
+              ) : null}
+              <span className="text-[8px] font-bold leading-tight">{label}</span>
               {active && (
                 <div className="w-1 h-1 rounded-full" style={{ background: 'hsl(0 75% 50%)' }} />
               )}

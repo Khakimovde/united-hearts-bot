@@ -1,12 +1,18 @@
 import { useGarden } from '@/contexts/GardenContext';
 import { CoinBalance } from '@/components/CoinBalance';
 import { ChevronDown, Clock, AlertCircle, ArrowLeft, X, Megaphone, FileText } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PAYMENT_LEVELS, getPaymentLevel, getNextPaymentLevel, MIN_WITHDRAW } from '@/lib/gameConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegram } from '@/hooks/useTelegram';
 
 import paymentWalletImg from '@/assets/payment-wallet.png';
+import uzcardLogo from '@/assets/uzcard-logo.png';
+import humoLogo from '@/assets/humo-logo.png';
+import beelineLogo from '@/assets/beeline-logo.png';
+import ucellLogo from '@/assets/ucell-logo.png';
+import mobiuzLogo from '@/assets/mobiuz-logo.png';
+import uzmobileLogo from '@/assets/uzmobile-logo.png';
 
 function addBusinessDays(startDate: Date, days: number): Date {
   const result = new Date(startDate);
@@ -35,7 +41,22 @@ function getExpectedDate(processingDays: number): string {
   return formatUzDate(addBusinessDays(getUzbekistanNow(), processingDays));
 }
 
-type WithdrawStep = 'phone' | 'card' | 'amount' | 'confirm' | 'done';
+type PaymentMethod = 'uzcard' | 'humo' | 'beeline' | 'ucell' | 'mobiuz' | 'uzmobile';
+type WithdrawStep = 'method' | 'details' | 'amount' | 'confirm' | 'done';
+
+const CARD_METHODS = [
+  { id: 'uzcard' as PaymentMethod, name: 'Uzcard', logo: uzcardLogo, color: 'hsl(225 55% 45%)' },
+  { id: 'humo' as PaymentMethod, name: 'Humo', logo: humoLogo, color: 'hsl(42 60% 45%)' },
+];
+
+const MOBILE_METHODS = [
+  { id: 'beeline' as PaymentMethod, name: 'Beeline', logo: beelineLogo, color: 'hsl(50 95% 50%)' },
+  { id: 'ucell' as PaymentMethod, name: 'Ucell', logo: ucellLogo, color: 'hsl(280 80% 40%)' },
+  { id: 'mobiuz' as PaymentMethod, name: 'Mobiuz', logo: mobiuzLogo, color: 'hsl(0 85% 50%)' },
+  { id: 'uzmobile' as PaymentMethod, name: 'Uzmobile', logo: uzmobileLogo, color: 'hsl(160 60% 40%)' },
+];
+
+const isMobileMethod = (m: PaymentMethod) => ['beeline', 'ucell', 'mobiuz', 'uzmobile'].includes(m);
 
 const STATUS_CONFIG = {
   pending: { bg: 'hsl(45 90% 55%)', text: 'hsl(45 90% 20%)', label: "⏳ So'rov yuborildi" },
@@ -53,21 +74,22 @@ interface PaymentRecord {
   amount_uzs: number;
   card_last4: string;
   payment_level_name: string;
+  payment_method?: string;
   status: keyof typeof STATUS_CONFIG;
   created_at: string;
   paid_date?: string;
 }
 
-const COIN_TO_UZS = 5000 / 9000; // 9000 tanga = 5000 UZS
+const COIN_TO_UZS = 5000 / 9000;
 
 export default function Payments() {
   const { userData, setUserCoins, refreshUserData } = useGarden();
   const telegram = useTelegram();
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [expandedLevel, setExpandedLevel] = useState<number | null>(null);
-  const [withdrawStep, setWithdrawStep] = useState<WithdrawStep>('phone');
-  const [phone, setPhone] = useState('');
-  const [phoneLoaded, setPhoneLoaded] = useState(false);
+  const [withdrawStep, setWithdrawStep] = useState<WithdrawStep>('method');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('uzcard');
+  const [phone, setPhone] = useState('+998');
   const [cardNumber, setCardNumber] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [showChannel, setShowChannel] = useState(false);
@@ -81,24 +103,9 @@ export default function Payments() {
   const userLevel = getPaymentLevel(treesGrown, referralCount);
   const nextLevel = getNextPaymentLevel(userLevel);
 
-  // Load paid payments for channel (last 30) and auto-fill phone
   useEffect(() => {
     loadChannelPayments();
     loadMyRequests();
-    // Auto-fill phone from DB
-    if (!phoneLoaded && telegram.id) {
-      supabase
-        .from('users')
-        .select('phone')
-        .eq('telegram_id', telegram.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.phone) {
-            setPhone(data.phone as string);
-          }
-          setPhoneLoaded(true);
-        });
-    }
   }, [telegram.id]);
 
   const loadChannelPayments = async () => {
@@ -131,13 +138,23 @@ export default function Payments() {
     setCardNumber(digits.replace(/(\d{4})/g, '$1 ').trim());
   };
 
+  const handlePhoneInput = (value: string) => {
+    if (!value.startsWith('+998')) {
+      value = '+998';
+    }
+    const afterPrefix = value.slice(4).replace(/\D/g, '').slice(0, 9);
+    setPhone('+998' + afterPrefix);
+  };
+
   const rawCard = cardNumber.replace(/\s/g, '');
+  const rawPhone = phone;
   const expectedDate = getExpectedDate(userLevel.processingDays);
   const requestDateStr = formatUzDate(getUzbekistanNow());
 
   const handleStartWithdraw = () => {
-    setWithdrawStep('phone');
-    setPhone('');
+    setWithdrawStep('method');
+    setPaymentMethod('uzcard');
+    setPhone('+998');
     setCardNumber('');
     setWithdrawAmount('');
     setShowWithdraw(true);
@@ -153,6 +170,9 @@ export default function Payments() {
       const amountUzs = Math.floor(amount * COIN_TO_UZS);
       const photoUrl = (window.Telegram?.WebApp?.initDataUnsafe as any)?.user?.photo_url || null;
 
+      const detailValue = isMobileMethod(paymentMethod) ? rawPhone : rawCard;
+      const last4 = isMobileMethod(paymentMethod) ? rawPhone.slice(-4) : rawCard.slice(-4);
+
       const { data, error } = await supabase.rpc('submit_payment_request', {
         p_user_telegram_id: telegram.id,
         p_username: telegram.username,
@@ -160,17 +180,16 @@ export default function Payments() {
         p_photo_url: photoUrl,
         p_amount: amount,
         p_amount_uzs: amountUzs,
-        p_phone: phone,
-        p_card_number: rawCard,
-        p_card_last4: rawCard.slice(-4),
+        p_phone: isMobileMethod(paymentMethod) ? rawPhone : '',
+        p_card_number: isMobileMethod(paymentMethod) ? '' : rawCard,
+        p_card_last4: last4,
         p_payment_level_id: userLevel.id,
         p_payment_level_name: userLevel.name,
         p_expected_date: expectedDate,
+        p_payment_method: paymentMethod,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const remainingCoins = Number((data as { remaining_coins?: number } | null)?.remaining_coins);
       if (Number.isFinite(remainingCoins)) {
@@ -191,7 +210,14 @@ export default function Payments() {
     return `${d.getDate()}-${['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'][d.getMonth()]}`;
   };
 
+  const getMethodLabel = (method?: string) => {
+    const all = [...CARD_METHODS, ...MOBILE_METHODS];
+    return all.find(m => m.id === method)?.name || 'Uzcard';
+  };
+
   // --- Channel Modal ---
+  const channelScrollRef = useRef<HTMLDivElement>(null);
+
   const ChannelModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'hsl(0 0% 0% / 0.5)' }}>
       <div className="bg-card rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden" style={{ boxShadow: '0 25px 50px hsl(0 0% 0% / 0.25)' }}>
@@ -206,7 +232,7 @@ export default function Payments() {
           <p className="text-lg font-bold" style={{ color: 'hsl(145 50% 40%)' }}>{totalPaidUzs.toLocaleString()} UZS</p>
           <p className="text-xs text-muted-foreground mt-1">Oxirgi 30 ta to'lov</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5">
+        <div ref={channelScrollRef} className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {channelPayments.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Hozircha to'lovlar yo'q</p>
           ) : (
@@ -220,7 +246,7 @@ export default function Payments() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-card-foreground truncate">
-                      {p.username ? `@${p.username}` : p.first_name}
+                      {p.username && p.username !== '' ? `@${p.username}` : (p.first_name || 'Foydalanuvchi')}
                     </p>
                     <p className="text-[10px] text-muted-foreground">{p.payment_level_name}</p>
                   </div>
@@ -255,7 +281,7 @@ export default function Payments() {
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {myRequests.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-3xl mb-2">📭</p>
@@ -277,15 +303,10 @@ export default function Payments() {
                 <div className="space-y-1 text-[11px] text-muted-foreground">
                   <p>So'rov sanasi: {formatDate(r.created_at)}</p>
                   <p>Daraja: {r.payment_level_name} • {userLevel.processingDays} ish kuni</p>
-                  {r.status === 'pending' && (
-                    <p style={{ color: 'hsl(38 80% 45%)' }}>⏳ So'rovingiz ko'rib chiqilmoqda...</p>
-                  )}
-                  {r.status === 'approved' && (
-                    <p style={{ color: 'hsl(200 70% 45%)' }}>✅ Tasdiqlandi! Tez orada hisobingizga o'tkaziladi</p>
-                  )}
-                  {r.status === 'rejected' && (
-                    <p style={{ color: 'hsl(0 75% 50%)' }}>❌ Rad etildi</p>
-                  )}
+                  {(r as any).payment_method && <p>Usul: {getMethodLabel((r as any).payment_method)}</p>}
+                  {r.status === 'pending' && <p style={{ color: 'hsl(38 80% 45%)' }}>⏳ So'rovingiz ko'rib chiqilmoqda...</p>}
+                  {r.status === 'approved' && <p style={{ color: 'hsl(200 70% 45%)' }}>✅ Tasdiqlandi! Tez orada hisobingizga o'tkaziladi</p>}
+                  {r.status === 'rejected' && <p style={{ color: 'hsl(0 75% 50%)' }}>❌ Rad etildi</p>}
                   {r.paid_date && <p style={{ color: 'hsl(145 50% 35%)' }}>💰 To'landi: {formatDate(r.paid_date)}</p>}
                 </div>
               </div>
@@ -296,6 +317,8 @@ export default function Payments() {
     </div>
   );
 
+  const selectedMethodInfo = [...CARD_METHODS, ...MOBILE_METHODS].find(m => m.id === paymentMethod);
+
   // Withdraw flow
   if (showWithdraw) {
     return (
@@ -305,48 +328,93 @@ export default function Payments() {
         </button>
         <h2 className="text-lg font-bold text-foreground mb-4">💰 Pul yechish</h2>
 
-        {withdrawStep === 'phone' && (
-          <div className="card-flat p-5">
-            <h3 className="font-bold text-card-foreground text-sm mb-3">📱 Telefon raqamingiz</h3>
-            <p className="text-xs text-muted-foreground mb-3">🔒 Xavfsizlik uchun telefon raqamingizni kiriting</p>
-            <input
-              type="tel"
-              placeholder="+998 90 123 45 67"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <button
-              onClick={() => setWithdrawStep('card')}
-              disabled={phone.length < 9}
-              className="btn-cartoon w-full py-3 mt-4 disabled:opacity-50"
-            >
-              Davom etish →
-            </button>
+        {withdrawStep === 'method' && (
+          <div className="space-y-4">
+            {/* Cards */}
+            <div>
+              <h3 className="font-bold text-card-foreground text-sm mb-3">💳 Kartalar</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {CARD_METHODS.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => { setPaymentMethod(m.id); setWithdrawStep('details'); }}
+                    className="card-flat p-4 flex flex-col items-center gap-2 transition-all active:scale-95"
+                    style={{ border: `2px solid ${m.color}20` }}
+                  >
+                    <img src={m.logo} alt={m.name} className="w-12 h-12 rounded-xl object-contain" width={48} height={48} />
+                    <span className="text-sm font-bold text-card-foreground">{m.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile operators */}
+            <div>
+              <h3 className="font-bold text-card-foreground text-sm mb-3">📱 Mobil telefonlar</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {MOBILE_METHODS.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => { setPaymentMethod(m.id); setWithdrawStep('details'); }}
+                    className="card-flat p-4 flex flex-col items-center gap-2 transition-all active:scale-95"
+                    style={{ border: `2px solid ${m.color}20` }}
+                  >
+                    <img src={m.logo} alt={m.name} className="w-12 h-12 rounded-xl object-contain" width={48} height={48} />
+                    <span className="text-sm font-bold text-card-foreground">{m.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
-        {withdrawStep === 'card' && (
+        {withdrawStep === 'details' && (
           <div className="card-flat p-5">
-            <h3 className="font-bold text-card-foreground text-sm mb-3">💳 Karta raqamini kiriting</h3>
-            <p className="text-xs text-muted-foreground mb-3">Uzcard yoki Humo kartangizga pul yechib olishingiz mumkin</p>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="8600 1234 5678 9012"
-              value={cardNumber}
-              onChange={(e) => handleCardInput(e.target.value)}
-              maxLength={19}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <p className="text-[11px] text-muted-foreground mt-2">Uzcard yoki Humo karta raqamingizni kiriting (16 ta raqam)</p>
-            <button
-              onClick={() => setWithdrawStep('amount')}
-              disabled={rawCard.length !== 16}
-              className="btn-cartoon w-full py-3 mt-4 disabled:opacity-50"
-            >
-              Davom etish →
-            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <img src={selectedMethodInfo?.logo} alt="" className="w-10 h-10 rounded-xl object-contain" width={40} height={40} />
+              <h3 className="font-bold text-card-foreground text-sm">{selectedMethodInfo?.name}</h3>
+            </div>
+
+            {isMobileMethod(paymentMethod) ? (
+              <>
+                <p className="text-xs text-muted-foreground mb-3">📱 Telefon raqamingizni kiriting</p>
+                <input
+                  type="tel"
+                  placeholder="+998 XX XXX XX XX"
+                  value={phone}
+                  onChange={(e) => handlePhoneInput(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <p className="text-[11px] text-muted-foreground mt-2">+998 dan keyin 9 ta raqam kiriting</p>
+                <button
+                  onClick={() => setWithdrawStep('amount')}
+                  disabled={phone.length !== 13}
+                  className="btn-cartoon w-full py-3 mt-4 disabled:opacity-50"
+                >
+                  Davom etish →
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground mb-3">💳 Karta raqamini kiriting (16 ta raqam)</p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="8600 1234 5678 9012"
+                  value={cardNumber}
+                  onChange={(e) => handleCardInput(e.target.value)}
+                  maxLength={19}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <button
+                  onClick={() => setWithdrawStep('amount')}
+                  disabled={rawCard.length !== 16}
+                  className="btn-cartoon w-full py-3 mt-4 disabled:opacity-50"
+                >
+                  Davom etish →
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -394,12 +462,15 @@ export default function Payments() {
             <h3 className="font-bold text-card-foreground text-sm mb-4">✅ So'rovni tasdiqlang</h3>
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between items-center py-2 px-3 rounded-xl bg-muted/50">
-                <span className="text-muted-foreground">Telefon</span>
-                <span className="font-bold text-foreground">{phone}</span>
+                <span className="text-muted-foreground">To'lov usuli</span>
+                <div className="flex items-center gap-2">
+                  <img src={selectedMethodInfo?.logo} alt="" className="w-5 h-5 rounded object-contain" width={20} height={20} />
+                  <span className="font-bold text-foreground">{selectedMethodInfo?.name}</span>
+                </div>
               </div>
               <div className="flex justify-between items-center py-2 px-3 rounded-xl bg-muted/50">
-                <span className="text-muted-foreground">Karta</span>
-                <span className="font-bold text-foreground font-mono">{cardNumber}</span>
+                <span className="text-muted-foreground">{isMobileMethod(paymentMethod) ? 'Telefon' : 'Karta'}</span>
+                <span className="font-bold text-foreground font-mono">{isMobileMethod(paymentMethod) ? rawPhone : cardNumber}</span>
               </div>
               <div className="flex justify-between items-center py-2 px-3 rounded-xl bg-muted/50">
                 <span className="text-muted-foreground">Miqdor</span>
