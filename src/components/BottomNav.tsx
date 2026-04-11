@@ -1,17 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Flower2, Store, ListChecks, Users, Wallet, User, type LucideIcon } from 'lucide-react';
+import { Flower2, Store, ListChecks, Users, Wallet, User, Dices, type LucideIcon } from 'lucide-react';
 
 interface TabItem {
   path: string;
-  icon?: LucideIcon;
+  icon: LucideIcon;
   label: string;
-  emoji?: string;
 }
 
 const tabs: TabItem[] = [
   { path: '/', icon: Flower2, label: "Bog'" },
   { path: '/market', icon: Store, label: 'Bozor' },
-  { path: '/lottery', label: 'Lotereya', emoji: '🎰' },
+  { path: '/lottery', icon: Dices, label: 'Lotereya' },
   { path: '/tasks', icon: ListChecks, label: 'Vazifalar' },
   { path: '/referral', icon: Users, label: 'Referal' },
   { path: '/payments', icon: Wallet, label: "To'lovlar" },

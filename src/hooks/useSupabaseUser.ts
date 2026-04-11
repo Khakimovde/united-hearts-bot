@@ -29,6 +29,11 @@ export interface DbUser {
   referred_by: string | null;
   referral_earnings: number;
   referral_commission_carry: number;
+  tickets_yellow: number;
+  tickets_green: number;
+  tickets_red: number;
+  lottery_ads_watched: number;
+  lottery_ads_reset_at: string;
   created_at: string;
   updated_at: string;
 }
