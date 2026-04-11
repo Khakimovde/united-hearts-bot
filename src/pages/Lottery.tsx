@@ -403,7 +403,7 @@ export default function Lottery() {
 
         await supabase
           .from('users')
-          .update(updates)
+          .update(updates as any)
           .eq('telegram_id', userData.telegramId);
 
         if (newAdsWatched >= 15) {
