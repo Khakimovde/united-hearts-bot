@@ -1,17 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Flower2, Store, ListChecks, Users, Wallet, User, type LucideIcon } from 'lucide-react';
+import { Flower2, Store, ListChecks, Users, Wallet, User, Dices, type LucideIcon } from 'lucide-react';
 
 interface TabItem {
   path: string;
-  icon?: LucideIcon;
+  icon: LucideIcon;
   label: string;
-  emoji?: string;
 }
 
 const tabs: TabItem[] = [
   { path: '/', icon: Flower2, label: "Bog'" },
   { path: '/market', icon: Store, label: 'Bozor' },
-  { path: '/lottery', label: 'Lotereya', emoji: '🎰' },
+  { path: '/lottery', icon: Dices, label: 'Lotereya' },
   { path: '/tasks', icon: ListChecks, label: 'Vazifalar' },
   { path: '/referral', icon: Users, label: 'Referal' },
   { path: '/payments', icon: Wallet, label: "To'lovlar" },
@@ -33,7 +32,7 @@ export function BottomNav() {
       }}
     >
       <div className="flex justify-around py-1">
-        {tabs.map(({ path, icon: Icon, label, emoji }) => {
+        {tabs.map(({ path, icon: Icon, label }) => {
           const active = pathname === path;
           return (
             <button
@@ -44,11 +43,7 @@ export function BottomNav() {
                 color: active ? 'hsl(0 75% 50%)' : 'hsl(25 8% 55%)',
               }}
             >
-              {emoji ? (
-                <span className="text-base leading-5">{emoji}</span>
-              ) : Icon ? (
-                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
-              ) : null}
+              <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
               <span className="text-[8px] font-bold leading-tight">{label}</span>
               {active && (
                 <div className="w-1 h-1 rounded-full" style={{ background: 'hsl(0 75% 50%)' }} />

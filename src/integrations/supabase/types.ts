@@ -252,6 +252,8 @@ export type Database = {
           fruits_pear: number
           has_claimed_free_sapling: boolean
           id: string
+          lottery_ads_reset_at: string | null
+          lottery_ads_watched: number
           phone: string | null
           photo_url: string | null
           referral_code: string
@@ -259,6 +261,9 @@ export type Database = {
           referral_earnings: number
           referred_by: string | null
           telegram_id: string
+          tickets_green: number
+          tickets_red: number
+          tickets_yellow: number
           total_ads_watched: number
           total_fruits_harvested: number
           total_trees_grown: number
@@ -278,6 +283,8 @@ export type Database = {
           fruits_pear?: number
           has_claimed_free_sapling?: boolean
           id?: string
+          lottery_ads_reset_at?: string | null
+          lottery_ads_watched?: number
           phone?: string | null
           photo_url?: string | null
           referral_code?: string
@@ -285,6 +292,9 @@ export type Database = {
           referral_earnings?: number
           referred_by?: string | null
           telegram_id: string
+          tickets_green?: number
+          tickets_red?: number
+          tickets_yellow?: number
           total_ads_watched?: number
           total_fruits_harvested?: number
           total_trees_grown?: number
@@ -304,6 +314,8 @@ export type Database = {
           fruits_pear?: number
           has_claimed_free_sapling?: boolean
           id?: string
+          lottery_ads_reset_at?: string | null
+          lottery_ads_watched?: number
           phone?: string | null
           photo_url?: string | null
           referral_code?: string
@@ -311,6 +323,9 @@ export type Database = {
           referral_earnings?: number
           referred_by?: string | null
           telegram_id?: string
+          tickets_green?: number
+          tickets_red?: number
+          tickets_yellow?: number
           total_ads_watched?: number
           total_fruits_harvested?: number
           total_trees_grown?: number
