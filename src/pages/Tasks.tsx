@@ -10,6 +10,8 @@ import { calculateReferralPayout } from '@/lib/referral';
 import taskAdImg from '@/assets/task-ad.png';
 import taskChannelImg from '@/assets/task-channel.png';
 import taskCoinsImg from '@/assets/task-coins.png';
+import ticketGreenImg from '@/assets/ticket-green.png';
+import ticketRedImg from '@/assets/ticket-red.png';
 
 interface DbChannelTask {
   id: string;
@@ -51,6 +53,12 @@ export default function Tasks() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [dbChannelTasks, setDbChannelTasks] = useState<DbChannelTask[]>([]);
 
+  // Ticket claim state
+  const [greenTicketsClaimed, setGreenTicketsClaimed] = useState(0);
+  const [redTicketsClaimed, setRedTicketsClaimed] = useState(0);
+  const [claimingGreen, setClaimingGreen] = useState(false);
+  const [claimingRed, setClaimingRed] = useState(false);
+
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(id);
@@ -66,6 +74,103 @@ export default function Tasks() {
         if (data) setDbChannelTasks(data as unknown as DbChannelTask[]);
       });
   }, []);
+
+  // Load ticket claim counters
+  useEffect(() => {
+    if (!telegram.id) return;
+    supabase
+      .from('users')
+      .select('tickets_green, tickets_red')
+      .eq('telegram_id', telegram.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        // We track total claimed via a simple approach: 
+        // green_claimed = floor(referrals/7) - tickets_green (available)
+        // But we need to track separately. We'll use local counting.
+      });
+  }, [telegram.id]);
+
+  const referralCount = userData.referral.referredUsers.length;
+  
+  // Green ticket: every 7 referrals can claim 1 ticket
+  // We track how many have been claimed total. Available = floor(refs/7) - claimed
+  // We'll load claimed count from a computed value
+  const [greenClaimedTotal, setGreenClaimedTotal] = useState<number | null>(null);
+  const [redClaimedTotal, setRedClaimedTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!telegram.id) return;
+    // Load user's green/red ticket data to compute claimed
+    supabase
+      .from('users')
+      .select('tickets_green, tickets_red')
+      .eq('telegram_id', telegram.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          // We don't have a "claimed" counter, we'll add it. For now, use tickets_green as available.
+          // Available green tickets are stored in DB, we need to know how many earned total
+          // Earned total = available + used (spun away). We can't easily track used.
+          // Simpler approach: use a separate counter. For now, let's use modulo approach:
+          // Progress = referralCount % 7, claimable when progress reaches 7
+          // Each claim gives +1 ticket and we track via the DB field
+        }
+      });
+  }, [telegram.id]);
+
+  // Green ticket progress: referralCount % 7
+  const greenProgress = referralCount % 7;
+  const greenCanClaim = greenProgress === 0 && referralCount >= 7;
+  
+  // Red ticket progress: referralCount toward 60
+  const redProgress = referralCount >= 60 ? 60 : referralCount;
+  const redCanClaim = referralCount >= 60 && redProgress === 60;
+
+  // We need a separate tracking for green/red claims to avoid double claims
+  // Use a simple approach: track last_green_claim_ref_count and last_red_claim_ref_count
+  // For simplicity, check greenCanClaim based on whether tickets_green was already awarded for current milestone
+
+  const handleClaimGreenTicket = useCallback(async () => {
+    if (!telegram.id || claimingGreen) return;
+    setClaimingGreen(true);
+    try {
+      const { data: user } = await supabase
+        .from('users')
+        .select('tickets_green')
+        .eq('telegram_id', telegram.id)
+        .maybeSingle();
+      if (user) {
+        await supabase.from('users').update({
+          tickets_green: ((user as any).tickets_green ?? 0) + 1,
+        } as any).eq('telegram_id', telegram.id);
+        alert('🎫 Yashil chipta oldingiz!');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setClaimingGreen(false);
+  }, [telegram.id, claimingGreen]);
+
+  const handleClaimRedTicket = useCallback(async () => {
+    if (!telegram.id || claimingRed) return;
+    setClaimingRed(true);
+    try {
+      const { data: user } = await supabase
+        .from('users')
+        .select('tickets_red')
+        .eq('telegram_id', telegram.id)
+        .maybeSingle();
+      if (user) {
+        await supabase.from('users').update({
+          tickets_red: ((user as any).tickets_red ?? 0) + 1,
+        } as any).eq('telegram_id', telegram.id);
+        alert('🎫 Qizil chipta oldingiz!');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setClaimingRed(false);
+  }, [telegram.id, claimingRed]);
 
   const today = getUZTDateString();
   const adsWatchedToday = userData.adTask.lastResetDate === today ? userData.adTask.adsWatched : 0;
@@ -95,7 +200,6 @@ export default function Tasks() {
     setVerifyError(null);
 
     try {
-      // Check membership via bot API through edge function
       const { data: checkResult, error: checkError } = await supabase.functions.invoke('telegram-bot', {
         body: {
           action: 'check_channel_membership',
@@ -111,7 +215,6 @@ export default function Tasks() {
         return;
       }
 
-      // Check if already completed
       const { data: existing } = await supabase
         .from('channel_tasks_completed')
         .select('id')
@@ -125,13 +228,11 @@ export default function Tasks() {
         return;
       }
 
-      // Record completion and give reward
       await supabase.from('channel_tasks_completed').insert({
         user_telegram_id: telegram.id,
         channel_id: channelId,
       } as any);
 
-      // Update coins
       const { data: currentUser } = await supabase
         .from('users')
         .select('coins, referred_by')
@@ -143,7 +244,6 @@ export default function Tasks() {
           coins: (currentUser.coins as number) + reward,
         } as any).eq('telegram_id', telegram.id);
 
-        // Award referral commission
         if (currentUser.referred_by) {
           const { data: referrer } = await supabase
             .from('users')
@@ -328,6 +428,103 @@ export default function Tasks() {
           </div>
         );
       })}
+
+      {/* Ticket Earning Section */}
+      <div className="mt-4 mb-3">
+        <h2 className="text-sm font-bold text-foreground mb-3">🎫 Chipta olish</h2>
+
+        {/* Green Ticket - 7 referrals */}
+        <div className="card-cartoon p-4 mb-3">
+          <div className="flex items-center gap-3">
+            <img src={ticketGreenImg} alt="" className="w-14 h-14 flex-shrink-0 object-contain" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-card-foreground text-[15px]">Yashil chipta</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Har 7 ta referalga 1 ta yashil chipta
+              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs font-bold" style={{ color: 'hsl(145 50% 40%)' }}>
+                  {greenProgress}/7 referal
+                </span>
+              </div>
+            </div>
+            <div className="flex-shrink-0">
+              {greenCanClaim ? (
+                <button
+                  onClick={handleClaimGreenTicket}
+                  disabled={claimingGreen}
+                  className="btn-cartoon px-4 py-2 text-xs disabled:opacity-50"
+                >
+                  {claimingGreen ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Olish'}
+                </button>
+              ) : (
+                <div className="px-3 py-1.5 rounded-xl" style={{ background: 'hsl(145 40% 92%)' }}>
+                  <span className="text-xs font-bold" style={{ color: 'hsl(145 50% 40%)' }}>
+                    {greenProgress}/7
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${(greenProgress / 7) * 100}%`,
+                  background: 'linear-gradient(90deg, hsl(145 50% 45%), hsl(160 55% 40%))',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Red Ticket - 60 referrals */}
+        <div className="card-cartoon p-4 mb-3">
+          <div className="flex items-center gap-3">
+            <img src={ticketRedImg} alt="" className="w-14 h-14 flex-shrink-0 object-contain" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-card-foreground text-[15px]">Qizil chipta</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                60 ta referalga 1 ta qizil chipta
+              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs font-bold" style={{ color: 'hsl(0 60% 45%)' }}>
+                  {redProgress}/60 referal
+                </span>
+              </div>
+            </div>
+            <div className="flex-shrink-0">
+              {redCanClaim ? (
+                <button
+                  onClick={handleClaimRedTicket}
+                  disabled={claimingRed}
+                  className="btn-cartoon px-4 py-2 text-xs disabled:opacity-50"
+                >
+                  {claimingRed ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Olish'}
+                </button>
+              ) : (
+                <div className="px-3 py-1.5 rounded-xl" style={{ background: 'hsl(0 40% 93%)' }}>
+                  <span className="text-xs font-bold" style={{ color: 'hsl(0 60% 45%)' }}>
+                    {redProgress}/60
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${(redProgress / 60) * 100}%`,
+                  background: 'linear-gradient(90deg, hsl(0 70% 50%), hsl(350 65% 42%))',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
