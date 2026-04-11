@@ -448,7 +448,7 @@ export default function Lottery() {
       }
     }
 
-    await supabase.from('users').update(updates).eq('telegram_id', userData.telegramId);
+    await supabase.from('users').update(updates as any).eq('telegram_id', userData.telegramId);
 
     // Update local tickets
     setLocalTickets(prev => {
