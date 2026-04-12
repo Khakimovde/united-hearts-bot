@@ -224,16 +224,16 @@ function SpinWheel({ config, tickets, referralCount, onClose, onApplyReward }: {
                     }}
                   >
                     <div
-                      className="absolute text-white font-bold flex items-center gap-0.5"
+                      className="absolute text-white font-extrabold flex flex-col items-center"
                       style={{
-                        left: `${50 + 30 * Math.sin((midAngle * Math.PI) / 180)}%`,
-                        top: `${50 - 30 * Math.cos((midAngle * Math.PI) / 180)}%`,
+                        left: `${50 + 28 * Math.sin((midAngle * Math.PI) / 180)}%`,
+                        top: `${50 - 28 * Math.cos((midAngle * Math.PI) / 180)}%`,
                         transform: `translate(-50%, -50%) rotate(${midAngle}deg)`,
-                        fontSize: '10px',
-                        textShadow: '0 1px 3px hsla(0 0% 0% / 0.5)',
+                        textShadow: '0 2px 4px hsla(0 0% 0% / 0.6)',
                       }}
                     >
-                      <span className="whitespace-nowrap">{item.label}</span>
+                      <span className="whitespace-nowrap" style={{ fontSize: '15px', lineHeight: 1 }}>{item.emoji}</span>
+                      <span className="whitespace-nowrap" style={{ fontSize: '11px', lineHeight: 1, marginTop: '1px' }}>+{item.value}</span>
                     </div>
                   </div>
                 );

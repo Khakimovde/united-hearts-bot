@@ -235,7 +235,7 @@ export default function Payments() {
           <p className="text-lg font-bold" style={{ color: 'hsl(145 50% 40%)' }}>{totalPaidUzs.toLocaleString()} UZS</p>
           <p className="text-xs text-muted-foreground mt-1">Oxirgi 30 ta to'lov</p>
         </div>
-        <div ref={channelScrollRef} className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div ref={channelScrollRef} className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }} onTouchMove={(e) => e.stopPropagation()}>
           {channelPayments.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Hozircha to'lovlar yo'q</p>
           ) : (
