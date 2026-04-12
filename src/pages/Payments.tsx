@@ -218,7 +218,7 @@ export default function Payments() {
     return all.find(m => m.id === method)?.name || 'Uzcard';
   };
 
-  // Channel and MyRequests modals rendered inline below (not as function components to avoid remount/scroll reset)
+  // Channel modal rendered inline in JSX to avoid remount/scroll reset
 
   // --- My Requests Modal ---
   const MyRequestsModal = () => (
