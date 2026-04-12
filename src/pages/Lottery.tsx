@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useGarden } from '@/contexts/GardenContext';
 import { CoinBalance } from '@/components/CoinBalance';
 import type { TreeType } from '@/lib/types';
@@ -6,6 +6,39 @@ import { supabase } from '@/integrations/supabase/client';
 import ticketYellowImg from '@/assets/ticket-yellow.png';
 import ticketGreenImg from '@/assets/ticket-green.png';
 import ticketRedImg from '@/assets/ticket-red.png';
+
+// Get next 2-hour boundary (00:00, 02:00, 04:00, ...) in UZT
+function getNextTwoHourReset(): number {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  const currentHour = uzt.getHours();
+  const nextSlot = Math.ceil((currentHour + 1) / 2) * 2;
+  const reset = new Date(uzt);
+  reset.setHours(nextSlot >= 24 ? 0 : nextSlot, 0, 0, 0);
+  if (nextSlot >= 24) reset.setDate(reset.getDate() + 1);
+  // Convert back to real timestamp
+  return reset.getTime() - 5 * 3600000 - now.getTimezoneOffset() * 60000;
+}
+
+function getCurrentTwoHourSlotStart(): number {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  const currentHour = uzt.getHours();
+  const slotStart = Math.floor(currentHour / 2) * 2;
+  const start = new Date(uzt);
+  start.setHours(slotStart, 0, 0, 0);
+  return start.getTime() - 5 * 3600000 - now.getTimezoneOffset() * 60000;
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 // ── Types ──
 type WheelTier = 'yellow' | 'green' | 'red';
@@ -261,6 +294,13 @@ export default function Lottery() {
   const [localTickets, setLocalTickets] = useState<{ yellow: number; green: number; red: number } | null>(null);
   const tickets = localTickets ?? { yellow: 0, green: 0, red: 0 };
 
+  // Ad progress state
+  const [adsWatched, setAdsWatched] = useState(0);
+  const [adSlotResetAt, setAdSlotResetAt] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState('');
+  const [adLoading, setAdLoading] = useState(false);
+  const [slotComplete, setSlotComplete] = useState(false);
+
   const loadTickets = useCallback(async () => {
     if (!userData.telegramId) return;
     const { data } = await supabase
@@ -274,67 +314,78 @@ export default function Lottery() {
         green: (data as any).tickets_green ?? 0,
         red: (data as any).tickets_red ?? 0,
       });
+
+      const resetAt = (data as any).lottery_ads_reset_at ? new Date((data as any).lottery_ads_reset_at).getTime() : 0;
+      const currentSlotStart = getCurrentTwoHourSlotStart();
+      
+      // If reset was before current slot, ads are reset
+      if (resetAt < currentSlotStart) {
+        setAdsWatched(0);
+        setSlotComplete(false);
+        setAdSlotResetAt(null);
+      } else {
+        const watched = (data as any).lottery_ads_watched ?? 0;
+        setAdsWatched(watched);
+        setAdSlotResetAt(resetAt);
+        setSlotComplete(watched >= 15);
+      }
     }
   }, [userData.telegramId]);
 
-  useState(() => { loadTickets(); });
+  useEffect(() => { loadTickets(); }, [loadTickets]);
+
+  // Countdown timer
+  useEffect(() => {
+    const update = () => {
+      const nextReset = getNextTwoHourReset();
+      const remaining = nextReset - Date.now();
+      setCountdown(formatCountdown(remaining));
+      
+      // Auto-reset when slot changes
+      if (remaining <= 0) {
+        setAdsWatched(0);
+        setSlotComplete(false);
+        setAdSlotResetAt(null);
+      }
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const referralCount = userData.referral.referredUsers.length;
 
-  // Earn yellow ticket via ads
-  const handleEarnYellowTicket = useCallback(() => {
-    if (!userData.telegramId) return;
+  // Earn yellow ticket via ads - inline, no alert
+  const handleWatchAd = useCallback(() => {
+    if (!userData.telegramId || adLoading || slotComplete) return;
 
-    (async () => {
-      const { data } = await supabase
+    setAdLoading(true);
+    triggerAd(async () => {
+      const newAdsWatched = adsWatched + 1;
+      const updates: any = {
+        lottery_ads_watched: newAdsWatched,
+      };
+
+      if (adsWatched === 0 && !adSlotResetAt) {
+        updates.lottery_ads_reset_at = new Date().toISOString();
+        setAdSlotResetAt(Date.now());
+      }
+
+      if (newAdsWatched >= 15) {
+        updates.tickets_yellow = (tickets.yellow || 0) + 1;
+        setLocalTickets(prev => prev ? { ...prev, yellow: prev.yellow + 1 } : { yellow: 1, green: 0, red: 0 });
+        setSlotComplete(true);
+      }
+
+      await supabase
         .from('users')
-        .select('lottery_ads_watched, lottery_ads_reset_at')
-        .eq('telegram_id', userData.telegramId)
-        .maybeSingle();
-      if (!data) return;
+        .update(updates as any)
+        .eq('telegram_id', userData.telegramId);
 
-      const resetAt = new Date((data as any).lottery_ads_reset_at || 0).getTime();
-      const now = Date.now();
-      const twoHours = 2 * 60 * 60 * 1000;
-      let adsWatched = (data as any).lottery_ads_watched ?? 0;
-
-      if (now - resetAt >= twoHours) {
-        adsWatched = 0;
-      }
-
-      if (adsWatched >= 15) {
-        alert('Chipta olish uchun 2 soat kutish kerak!');
-        return;
-      }
-
-      triggerAd(async () => {
-        const newAdsWatched = adsWatched + 1;
-        const updates: any = {
-          lottery_ads_watched: newAdsWatched,
-        };
-
-        if (adsWatched === 0) {
-          updates.lottery_ads_reset_at = new Date().toISOString();
-        }
-
-        if (newAdsWatched >= 15) {
-          updates.tickets_yellow = (tickets.yellow || 0) + 1;
-          setLocalTickets(prev => prev ? { ...prev, yellow: prev.yellow + 1 } : { yellow: 1, green: 0, red: 0 });
-        }
-
-        await supabase
-          .from('users')
-          .update(updates as any)
-          .eq('telegram_id', userData.telegramId);
-
-        if (newAdsWatched >= 15) {
-          alert('🎫 Sariq chipta oldingiz!');
-        } else {
-          alert(`Reklama ${newAdsWatched}/15 ko'rildi`);
-        }
-      }, 1);
-    })();
-  }, [userData.telegramId, tickets.yellow, triggerAd]);
+      setAdsWatched(newAdsWatched);
+      setAdLoading(false);
+    }, 1);
+  }, [userData.telegramId, adsWatched, adSlotResetAt, tickets.yellow, triggerAd, adLoading, slotComplete]);
 
   // Apply reward after spin
   const handleApplyReward = useCallback(async (item: WheelItem, tier: WheelTier) => {
@@ -388,7 +439,7 @@ export default function Lottery() {
         <CoinBalance />
       </div>
 
-      {/* Ticket summary - white bg, centered tickets */}
+      {/* Ticket summary */}
       <div className="flex items-center justify-center gap-4 mb-5 p-3 rounded-2xl bg-background" style={{ border: '1.5px solid hsl(25 15% 88%)' }}>
         <div className="flex items-center gap-1.5">
           <img src={ticketYellowImg} alt="" className="w-8 h-8 object-contain" />
@@ -404,7 +455,7 @@ export default function Lottery() {
         </div>
       </div>
 
-      {/* 3 Wheel Cards - no colored bg, white cards */}
+      {/* 3 Wheel Cards */}
       <div className="space-y-3">
         {WHEEL_CONFIGS.map(cfg => {
           const t = getWheelTickets(cfg.id);
@@ -418,7 +469,6 @@ export default function Lottery() {
                 boxShadow: '0 4px 16px hsla(0 0% 0% / 0.06)',
               }}
             >
-              {/* Ticket image instead of lock */}
               <div className="w-16 h-16 rounded-full flex-shrink-0 flex items-center justify-center relative overflow-hidden bg-background" style={{
                 boxShadow: `0 0 0 3px hsl(25 20% 85%), 0 4px 12px hsla(0 0% 0% / 0.15)`,
               }}>
@@ -452,15 +502,48 @@ export default function Lottery() {
         })}
       </div>
 
-      {/* Earn ticket button */}
-      <div className="mt-5 space-y-2">
-        <button
-          onClick={handleEarnYellowTicket}
-          className="btn-cartoon w-full py-3 text-sm flex items-center justify-center gap-2"
-        >
-          <img src={ticketYellowImg} alt="" className="w-5 h-5 object-contain" />
-          Sariq chipta olish (15 reklama)
-        </button>
+      {/* Inline Ad Progress for Yellow Ticket */}
+      <div className="mt-5 p-4 rounded-2xl bg-background" style={{ border: '2px solid hsl(25 20% 88%)', boxShadow: '0 4px 16px hsla(0 0% 0% / 0.06)' }}>
+        <div className="flex items-center gap-3 mb-3">
+          <img src={ticketYellowImg} alt="" className="w-10 h-10 object-contain" />
+          <div className="flex-1">
+            <p className="font-bold text-sm text-card-foreground">Sariq chipta olish</p>
+            <p className="text-xs text-muted-foreground">15 ta reklama ko'ring</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-mono font-bold text-muted-foreground">⏱ {countdown}</p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full h-3 rounded-full overflow-hidden mb-3" style={{ background: 'hsl(25 15% 92%)' }}>
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{
+              width: `${(adsWatched / 15) * 100}%`,
+              background: slotComplete
+                ? 'linear-gradient(90deg, hsl(145 60% 45%), hsl(145 70% 55%))'
+                : 'linear-gradient(90deg, hsl(45 90% 50%), hsl(40 85% 55%))',
+            }}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-card-foreground">{adsWatched}/15 ko'rildi</span>
+          {slotComplete ? (
+            <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'hsl(145 60% 92%)', color: 'hsl(145 60% 30%)' }}>
+              ✅ Chipta olindi!
+            </span>
+          ) : (
+            <button
+              onClick={handleWatchAd}
+              disabled={adLoading}
+              className="btn-cartoon px-4 py-1.5 text-xs flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {adLoading ? '⏳' : '▶️'} Reklama ko'rish
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Guide */}
