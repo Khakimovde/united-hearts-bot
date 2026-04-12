@@ -218,61 +218,7 @@ export default function Payments() {
     return all.find(m => m.id === method)?.name || 'Uzcard';
   };
 
-  // --- Channel Modal ---
-  const channelScrollRef = useRef<HTMLDivElement>(null);
-
-  const ChannelModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'hsl(0 0% 0% / 0.5)' }}>
-      <div className="bg-card rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden" style={{ boxShadow: '0 25px 50px hsl(0 0% 0% / 0.25)' }}>
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-bold text-card-foreground">📢 To'lovlar kanali</h3>
-          <button onClick={() => setShowChannel(false)} className="p-1.5 rounded-full hover:bg-muted">
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
-        </div>
-        <div className="p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Umumiy to'langan summa</p>
-          <p className="text-lg font-bold" style={{ color: 'hsl(145 50% 40%)' }}>{totalPaidUzs.toLocaleString()} UZS</p>
-          <p className="text-xs text-muted-foreground mt-1">Oxirgi 30 ta to'lov</p>
-        </div>
-        <div ref={channelScrollRef} className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
-          {channelPayments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Hozircha to'lovlar yo'q</p>
-          ) : (
-            channelPayments.map((p) => (
-              <div key={p.id} className="rounded-xl p-3 border border-border bg-background">
-                <div className="flex items-center gap-2.5 mb-2">
-                  {p.photo_url ? (
-                    <img src={p.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" width={32} height={32} />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ background: 'hsl(0 75% 50% / 0.1)' }}>🧑‍🌾</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-card-foreground truncate">
-                      {p.username && p.username !== '' ? `@${p.username}` : (p.first_name || 'Foydalanuvchi')}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">{p.payment_level_name}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-bold" style={{ color: 'hsl(0 75% 50%)' }}>{p.amount.toLocaleString()} tanga</span>
-                    <p className="text-[10px]" style={{ color: 'hsl(145 50% 40%)' }}>{p.amount_uzs?.toLocaleString()} UZS</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] text-muted-foreground">
-                    So'rov: {formatDate(p.created_at)} {p.paid_date && `• To'landi: ${formatDate(p.paid_date)}`}
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: STATUS_CONFIG[p.status].bg, color: STATUS_CONFIG[p.status].text }}>
-                    {STATUS_CONFIG[p.status].label}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  // Channel modal rendered inline in JSX to avoid remount/scroll reset
 
   // --- My Requests Modal ---
   const MyRequestsModal = () => (
@@ -520,7 +466,58 @@ export default function Payments() {
 
   return (
     <div className="px-4 py-3 pb-28 overflow-auto" style={{ background: 'linear-gradient(180deg, hsl(20 30% 96%) 0%, hsl(15 20% 93%) 100%)', minHeight: '100vh' }}>
-      {showChannel && <ChannelModal />}
+      {showChannel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'hsl(0 0% 0% / 0.5)' }}>
+          <div className="bg-card rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden" style={{ boxShadow: '0 25px 50px hsl(0 0% 0% / 0.25)' }}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-bold text-card-foreground">📢 To'lovlar kanali</h3>
+              <button onClick={() => setShowChannel(false)} className="p-1.5 rounded-full hover:bg-muted">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="p-4 text-center">
+              <p className="text-xs text-muted-foreground mb-1">Umumiy to'langan summa</p>
+              <p className="text-lg font-bold" style={{ color: 'hsl(145 50% 40%)' }}>{totalPaidUzs.toLocaleString()} UZS</p>
+              <p className="text-xs text-muted-foreground mt-1">Oxirgi 30 ta to'lov</p>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+              {channelPayments.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Hozircha to'lovlar yo'q</p>
+              ) : (
+                channelPayments.map((p) => (
+                  <div key={p.id} className="rounded-xl p-3 border border-border bg-background">
+                    <div className="flex items-center gap-2.5 mb-2">
+                      {p.photo_url ? (
+                        <img src={p.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" width={32} height={32} />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ background: 'hsl(0 75% 50% / 0.1)' }}>🧑‍🌾</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-card-foreground truncate">
+                          {p.username && p.username !== '' ? `@${p.username}` : (p.first_name || 'Foydalanuvchi')}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{p.payment_level_name}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold" style={{ color: 'hsl(0 75% 50%)' }}>{p.amount.toLocaleString()} tanga</span>
+                        <p className="text-[10px]" style={{ color: 'hsl(145 50% 40%)' }}>{p.amount_uzs?.toLocaleString()} UZS</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-[10px] text-muted-foreground">
+                        So'rov: {formatDate(p.created_at)} {p.paid_date && `• To'landi: ${formatDate(p.paid_date)}`}
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: STATUS_CONFIG[p.status].bg, color: STATUS_CONFIG[p.status].text }}>
+                        {STATUS_CONFIG[p.status].label}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {showMyRequests && <MyRequestsModal />}
 
       {/* Header */}
