@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useGarden } from '@/contexts/GardenContext';
 import { CoinBalance } from '@/components/CoinBalance';
 import type { TreeType } from '@/lib/types';
@@ -6,6 +6,39 @@ import { supabase } from '@/integrations/supabase/client';
 import ticketYellowImg from '@/assets/ticket-yellow.png';
 import ticketGreenImg from '@/assets/ticket-green.png';
 import ticketRedImg from '@/assets/ticket-red.png';
+
+// Get next 2-hour boundary (00:00, 02:00, 04:00, ...) in UZT
+function getNextTwoHourReset(): number {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  const currentHour = uzt.getHours();
+  const nextSlot = Math.ceil((currentHour + 1) / 2) * 2;
+  const reset = new Date(uzt);
+  reset.setHours(nextSlot >= 24 ? 0 : nextSlot, 0, 0, 0);
+  if (nextSlot >= 24) reset.setDate(reset.getDate() + 1);
+  // Convert back to real timestamp
+  return reset.getTime() - 5 * 3600000 - now.getTimezoneOffset() * 60000;
+}
+
+function getCurrentTwoHourSlotStart(): number {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  const currentHour = uzt.getHours();
+  const slotStart = Math.floor(currentHour / 2) * 2;
+  const start = new Date(uzt);
+  start.setHours(slotStart, 0, 0, 0);
+  return start.getTime() - 5 * 3600000 - now.getTimezoneOffset() * 60000;
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 // ── Types ──
 type WheelTier = 'yellow' | 'green' | 'red';
