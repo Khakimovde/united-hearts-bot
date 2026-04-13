@@ -160,20 +160,27 @@ function SpinWheel({ config, tickets, referralCount, onClose, onApplyReward }: {
 
     const winIndex = Math.floor(Math.random() * items.length);
     const extraSpins = 5 + Math.floor(Math.random() * 3);
-    const targetAngle = 360 - (winIndex * segmentAngle + segmentAngle / 2);
+    // Arrow points down from top (0°). Segment i starts at i*segmentAngle.
+    // To land arrow in middle of segment winIndex, wheel must rotate so that
+    // segment center aligns with top (0°). Center of segment = winIndex*segmentAngle + segmentAngle/2
+    // We need to rotate by that amount (clockwise) plus full spins.
+    const targetAngle = winIndex * segmentAngle + segmentAngle / 2;
     const totalRotation = extraSpins * 360 + targetAngle;
 
     setRotation(prev => prev + totalRotation);
 
     setTimeout(async () => {
-      const won = items[winIndex];
+      // Determine which segment the arrow actually points to based on final rotation
+      const finalAngle = ((rotation + totalRotation) % 360 + 360) % 360;
+      const landedIndex = Math.floor(finalAngle / segmentAngle) % items.length;
+      const won = items[landedIndex];
       setResult(won);
       setShowResult(true);
       setSpinning(false);
       spinRef.current = false;
       await onApplyReward(won, config.id);
     }, 4200);
-  }, [canSpin, items, segmentAngle, config.id, onApplyReward]);
+  }, [canSpin, items, segmentAngle, config.id, onApplyReward, rotation]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'hsla(0 0% 0% / 0.7)' }}>

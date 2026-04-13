@@ -97,15 +97,32 @@ export default function Payments() {
   const [channelPayments, setChannelPayments] = useState<PaymentRecord[]>([]);
   const [myRequests, setMyRequests] = useState<PaymentRecord[]>([]);
   const [totalPaidUzs, setTotalPaidUzs] = useState(0);
+  const [weeklySpent, setWeeklySpent] = useState(0);
 
   const treesGrown = userData.stats.totalTreesGrown;
   const referralCount = userData.referral.referredUsers.length;
   const userLevel = getPaymentLevel(treesGrown, referralCount);
   const nextLevel = getNextPaymentLevel(userLevel);
 
+  // Calculate weekly spent from payment requests this week
+  const loadWeeklySpent = async () => {
+    if (!telegram.id) return;
+    const { getWeekStartMonday } = await import('@/lib/gameConfig');
+    const weekStart = getWeekStartMonday();
+    const { data } = await supabase
+      .from('payment_requests')
+      .select('amount')
+      .eq('user_telegram_id', telegram.id)
+      .in('status', ['pending', 'approved', 'paid'])
+      .gte('created_at', weekStart + 'T00:00:00+05:00');
+    const total = (data || []).reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
+    setWeeklySpent(total);
+  };
+
   useEffect(() => {
     loadChannelPayments();
     loadMyRequests();
+    loadWeeklySpent();
   }, [telegram.id]);
 
   const loadChannelPayments = async () => {
@@ -197,7 +214,7 @@ export default function Payments() {
       }
 
       setWithdrawStep('done');
-      await Promise.all([loadMyRequests(), refreshUserData()]);
+      await Promise.all([loadMyRequests(), refreshUserData(), loadWeeklySpent()]);
     } catch (error) {
       console.error('Withdrawal submit failed:', error);
     } finally {
@@ -367,11 +384,16 @@ export default function Payments() {
           </div>
         )}
 
-        {withdrawStep === 'amount' && (
+        {withdrawStep === 'amount' && (() => {
+          const weeklyRemaining = Math.max(0, userLevel.weeklyLimit - weeklySpent);
+          const maxAllowed = Math.min(userData.coins, weeklyRemaining);
+          return (
           <div className="card-flat p-5">
             <h3 className="font-bold text-card-foreground text-sm mb-3">🪙 Tanga miqdorini kiriting</h3>
             <p className="text-xs text-muted-foreground mb-1">Balansingiz: <span className="font-bold" style={{ color: 'hsl(0 75% 50%)' }}>{userData.coins}</span> tanga</p>
             <p className="text-xs text-muted-foreground mb-1">Haftalik limit: <span className="font-bold">{userLevel.weeklyLimit.toLocaleString()}</span> tanga</p>
+            <p className="text-xs text-muted-foreground mb-1">Bu hafta yechildi: <span className="font-bold" style={{ color: 'hsl(38 80% 45%)' }}>{weeklySpent.toLocaleString()}</span> tanga</p>
+            <p className="text-xs mb-1" style={{ color: weeklyRemaining > 0 ? 'hsl(145 50% 40%)' : 'hsl(0 75% 50%)' }}>Qolgan limit: <span className="font-bold">{weeklyRemaining.toLocaleString()}</span> tanga</p>
             <p className="text-xs mb-1" style={{ color: 'hsl(38 80% 45%)' }}>Minimal yechish: {MIN_WITHDRAW.toLocaleString()} tanga = {Math.floor(MIN_WITHDRAW * COIN_TO_UZS).toLocaleString()} UZS</p>
             {Number(withdrawAmount) >= MIN_WITHDRAW && (
               <p className="text-xs font-bold mb-2" style={{ color: 'hsl(145 50% 40%)' }}>
@@ -391,20 +413,26 @@ export default function Payments() {
                 <AlertCircle className="w-3 h-3" /> Minimal {MIN_WITHDRAW.toLocaleString()} tanga
               </p>
             )}
-            {Number(withdrawAmount) > userLevel.weeklyLimit && (
+            {Number(withdrawAmount) > weeklyRemaining && (
               <p className="text-[11px] mt-2 flex items-center gap-1" style={{ color: 'hsl(0 75% 50%)' }}>
-                <AlertCircle className="w-3 h-3" /> Haftalik limit: {userLevel.weeklyLimit.toLocaleString()} tanga
+                <AlertCircle className="w-3 h-3" /> Qolgan haftalik limit: {weeklyRemaining.toLocaleString()} tanga
+              </p>
+            )}
+            {weeklyRemaining < MIN_WITHDRAW && (
+              <p className="text-[11px] mt-2 flex items-center gap-1" style={{ color: 'hsl(0 75% 50%)' }}>
+                <AlertCircle className="w-3 h-3" /> Haftalik limitingiz tugagan yoki yetarli emas
               </p>
             )}
             <button
               onClick={() => setWithdrawStep('confirm')}
-              disabled={Number(withdrawAmount) < MIN_WITHDRAW || Number(withdrawAmount) > userData.coins || Number(withdrawAmount) > userLevel.weeklyLimit}
+              disabled={Number(withdrawAmount) < MIN_WITHDRAW || Number(withdrawAmount) > userData.coins || Number(withdrawAmount) > weeklyRemaining}
               className="btn-cartoon w-full py-3 mt-4 disabled:opacity-50"
             >
               Tasdiqlash →
             </button>
           </div>
-        )}
+          );
+        })()}
 
         {withdrawStep === 'confirm' && (
           <div className="card-flat p-5">

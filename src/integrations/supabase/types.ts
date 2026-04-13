@@ -250,12 +250,14 @@ export type Database = {
           fruits_fig: number
           fruits_grape: number
           fruits_pear: number
+          green_tickets_claimed: number
           has_claimed_free_sapling: boolean
           id: string
           lottery_ads_reset_at: string | null
           lottery_ads_watched: number
           phone: string | null
           photo_url: string | null
+          red_tickets_claimed: number
           referral_code: string
           referral_commission_carry: number
           referral_earnings: number
@@ -281,12 +283,14 @@ export type Database = {
           fruits_fig?: number
           fruits_grape?: number
           fruits_pear?: number
+          green_tickets_claimed?: number
           has_claimed_free_sapling?: boolean
           id?: string
           lottery_ads_reset_at?: string | null
           lottery_ads_watched?: number
           phone?: string | null
           photo_url?: string | null
+          red_tickets_claimed?: number
           referral_code?: string
           referral_commission_carry?: number
           referral_earnings?: number
@@ -312,12 +316,14 @@ export type Database = {
           fruits_fig?: number
           fruits_grape?: number
           fruits_pear?: number
+          green_tickets_claimed?: number
           has_claimed_free_sapling?: boolean
           id?: string
           lottery_ads_reset_at?: string | null
           lottery_ads_watched?: number
           phone?: string | null
           photo_url?: string | null
+          red_tickets_claimed?: number
           referral_code?: string
           referral_commission_carry?: number
           referral_earnings?: number

@@ -37,6 +37,9 @@ interface DbUserRow {
   referral_earnings: number;
   has_claimed_free_sapling: boolean;
   created_at: string;
+  tickets_yellow: number;
+  tickets_green: number;
+  tickets_red: number;
 }
 
 interface PaymentRequest {
@@ -380,7 +383,55 @@ function UsersSection() {
               <Gift className="w-3.5 h-3.5" /> Berish
             </button>
           </div>
+
+          <h5 className="text-xs font-bold text-card-foreground mb-2 mt-4">🎫 Chipta berish</h5>
+          <TicketAdmin selectedUser={selectedUser} setSelectedUser={setSelectedUser} setUsers={setUsers} />
         </div>
+      </div>
+    );
+  }
+
+  function TicketAdmin({ selectedUser, setSelectedUser, setUsers }: { selectedUser: DbUserRow; setSelectedUser: (u: DbUserRow) => void; setUsers: React.Dispatch<React.SetStateAction<DbUserRow[]>> }) {
+    const [ticketType, setTicketType] = useState<'yellow' | 'green' | 'red'>('yellow');
+    const [ticketAmount, setTicketAmount] = useState('');
+
+    const ticketKey = ticketType === 'yellow' ? 'tickets_yellow' : ticketType === 'green' ? 'tickets_green' : 'tickets_red';
+    const currentVal = (selectedUser as any)[ticketKey] ?? 0;
+
+    const handleAddTicket = async () => {
+      if (!ticketAmount) return;
+      const newVal = Math.max(0, currentVal + (parseInt(ticketAmount) || 0));
+      await supabase.from('users').update({ [ticketKey]: newVal } as any).eq('telegram_id', selectedUser.telegram_id);
+      const updated = { ...selectedUser, [ticketKey]: newVal } as any;
+      setSelectedUser(updated);
+      setUsers((prev: DbUserRow[]) => prev.map(u => u.telegram_id === selectedUser.telegram_id ? updated : u));
+      setTicketAmount('');
+    };
+
+    return (
+      <div className="flex gap-2">
+        <select
+          value={ticketType}
+          onChange={(e) => setTicketType(e.target.value as any)}
+          className="bg-muted rounded-xl px-2 py-2 text-xs text-card-foreground"
+        >
+          <option value="yellow">🟡 Sariq ({currentVal})</option>
+          <option value="green">🟢 Yashil ({(selectedUser as any).tickets_green ?? 0})</option>
+          <option value="red">🔴 Qizil ({(selectedUser as any).tickets_red ?? 0})</option>
+        </select>
+        <input
+          type="number"
+          value={ticketAmount}
+          onChange={(e) => setTicketAmount(e.target.value)}
+          placeholder="Miqdor"
+          className="flex-1 bg-muted rounded-xl px-3 py-2 text-xs text-card-foreground placeholder:text-muted-foreground"
+        />
+        <button onClick={handleAddTicket}
+          className="px-3 py-2 rounded-xl text-xs font-bold text-white flex items-center gap-1"
+          style={{ background: 'hsl(145 40% 45%)' }}
+        >
+          <Gift className="w-3.5 h-3.5" /> Berish
+        </button>
       </div>
     );
   }
