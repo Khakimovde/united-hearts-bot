@@ -380,6 +380,9 @@ function UsersSection() {
               <Gift className="w-3.5 h-3.5" /> Berish
             </button>
           </div>
+
+          <h5 className="text-xs font-bold text-card-foreground mb-2 mt-4">🎫 Chipta berish</h5>
+          <TicketAdmin selectedUser={selectedUser} setSelectedUser={setSelectedUser} setUsers={setUsers} />
         </div>
       </div>
     );
