@@ -92,85 +92,83 @@ export default function Tasks() {
 
   const referralCount = userData.referral.referredUsers.length;
   
-  // Green ticket: every 7 referrals can claim 1 ticket
-  // We track how many have been claimed total. Available = floor(refs/7) - claimed
-  // We'll load claimed count from a computed value
-  const [greenClaimedTotal, setGreenClaimedTotal] = useState<number | null>(null);
-  const [redClaimedTotal, setRedClaimedTotal] = useState<number | null>(null);
+  // Green/Red ticket claim tracking from DB
+  const [greenClaimedTotal, setGreenClaimedTotal] = useState(0);
+  const [redClaimedTotal, setRedClaimedTotal] = useState(0);
 
   useEffect(() => {
     if (!telegram.id) return;
-    // Load user's green/red ticket data to compute claimed
     supabase
       .from('users')
-      .select('tickets_green, tickets_red')
+      .select('green_tickets_claimed, red_tickets_claimed')
       .eq('telegram_id', telegram.id)
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          // We don't have a "claimed" counter, we'll add it. For now, use tickets_green as available.
-          // Available green tickets are stored in DB, we need to know how many earned total
-          // Earned total = available + used (spun away). We can't easily track used.
-          // Simpler approach: use a separate counter. For now, let's use modulo approach:
-          // Progress = referralCount % 7, claimable when progress reaches 7
-          // Each claim gives +1 ticket and we track via the DB field
+          setGreenClaimedTotal((data as any).green_tickets_claimed ?? 0);
+          setRedClaimedTotal((data as any).red_tickets_claimed ?? 0);
         }
       });
   }, [telegram.id]);
 
-  // Green ticket progress: referralCount % 7
-  const greenProgress = referralCount % 7;
-  const greenCanClaim = greenProgress === 0 && referralCount >= 7;
-  
-  // Red ticket progress: referralCount toward 60
-  const redProgress = referralCount >= 60 ? 60 : referralCount;
-  const redCanClaim = referralCount >= 60 && redProgress === 60;
+  // Green ticket: every 7 referrals = 1 ticket claimable
+  // Total earnable = floor(referralCount / 7), already claimed = greenClaimedTotal
+  const greenEarnable = Math.floor(referralCount / 7);
+  const greenCanClaim = greenEarnable > greenClaimedTotal;
+  const greenProgress = greenCanClaim ? 7 : (referralCount % 7);
 
-  // We need a separate tracking for green/red claims to avoid double claims
-  // Use a simple approach: track last_green_claim_ref_count and last_red_claim_ref_count
-  // For simplicity, check greenCanClaim based on whether tickets_green was already awarded for current milestone
+  // Red ticket: every 60 referrals = 1 ticket claimable
+  const redEarnable = Math.floor(referralCount / 60);
+  const redCanClaim = redEarnable > redClaimedTotal;
+  const redProgress = redCanClaim ? 60 : (referralCount % 60);
 
   const handleClaimGreenTicket = useCallback(async () => {
-    if (!telegram.id || claimingGreen) return;
+    if (!telegram.id || claimingGreen || !greenCanClaim) return;
     setClaimingGreen(true);
     try {
       const { data: user } = await supabase
         .from('users')
-        .select('tickets_green')
+        .select('tickets_green, green_tickets_claimed')
         .eq('telegram_id', telegram.id)
         .maybeSingle();
       if (user) {
+        const newClaimed = ((user as any).green_tickets_claimed ?? 0) + 1;
         await supabase.from('users').update({
           tickets_green: ((user as any).tickets_green ?? 0) + 1,
+          green_tickets_claimed: newClaimed,
         } as any).eq('telegram_id', telegram.id);
+        setGreenClaimedTotal(newClaimed);
         alert('🎫 Yashil chipta oldingiz!');
       }
     } catch (e) {
       console.error(e);
     }
     setClaimingGreen(false);
-  }, [telegram.id, claimingGreen]);
+  }, [telegram.id, claimingGreen, greenCanClaim]);
 
   const handleClaimRedTicket = useCallback(async () => {
-    if (!telegram.id || claimingRed) return;
+    if (!telegram.id || claimingRed || !redCanClaim) return;
     setClaimingRed(true);
     try {
       const { data: user } = await supabase
         .from('users')
-        .select('tickets_red')
+        .select('tickets_red, red_tickets_claimed')
         .eq('telegram_id', telegram.id)
         .maybeSingle();
       if (user) {
+        const newClaimed = ((user as any).red_tickets_claimed ?? 0) + 1;
         await supabase.from('users').update({
           tickets_red: ((user as any).tickets_red ?? 0) + 1,
+          red_tickets_claimed: newClaimed,
         } as any).eq('telegram_id', telegram.id);
+        setRedClaimedTotal(newClaimed);
         alert('🎫 Qizil chipta oldingiz!');
       }
     } catch (e) {
       console.error(e);
     }
     setClaimingRed(false);
-  }, [telegram.id, claimingRed]);
+  }, [telegram.id, claimingRed, redCanClaim]);
 
   const today = getUZTDateString();
   const adsWatchedToday = userData.adTask.lastResetDate === today ? userData.adTask.adsWatched : 0;
