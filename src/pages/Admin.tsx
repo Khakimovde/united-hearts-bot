@@ -37,6 +37,9 @@ interface DbUserRow {
   referral_earnings: number;
   has_claimed_free_sapling: boolean;
   created_at: string;
+  tickets_yellow: number;
+  tickets_green: number;
+  tickets_red: number;
 }
 
 interface PaymentRequest {
