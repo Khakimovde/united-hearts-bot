@@ -941,3 +941,167 @@ function ChannelsSection() {
     </div>
   );
 }
+
+// ── Daily Ad Limit Completers Section ──
+function getUZTDateString(): string {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  return `${uzt.getFullYear()}-${String(uzt.getMonth() + 1).padStart(2, '0')}-${String(uzt.getDate()).padStart(2, '0')}`;
+}
+
+function getNextUZTMidnight(): number {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const uzt = new Date(utc + 5 * 3600000);
+  const next = new Date(uzt);
+  next.setHours(24, 0, 0, 0);
+  return next.getTime() - 5 * 3600000 - now.getTimezoneOffset() * 60000;
+}
+
+interface AdLimitUser {
+  telegram_id: string;
+  username: string;
+  first_name: string;
+  photo_url: string | null;
+  coins: number;
+  ad_task_ads_watched: number;
+  ad_task_total_ads_watched: number;
+  ad_task_last_reset_date: string;
+  total_ads_watched: number;
+  referral_code: string;
+  referral_earnings: number;
+  created_at: string;
+}
+
+function AdLimitSection() {
+  const [users, setUsers] = useState<AdLimitUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [countdown, setCountdown] = useState('');
+  const today = getUZTDateString();
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('users')
+      .select('telegram_id, username, first_name, photo_url, coins, ad_task_ads_watched, ad_task_total_ads_watched, ad_task_last_reset_date, total_ads_watched, referral_code, referral_earnings, created_at')
+      .eq('ad_task_last_reset_date', today)
+      .gte('ad_task_ads_watched', 500)
+      .order('ad_task_ads_watched', { ascending: false });
+    setUsers((data as any) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 30000); // refresh every 30s
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today]);
+
+  // Countdown to next UZT midnight (when ad limit resets)
+  useEffect(() => {
+    const update = () => {
+      const remaining = getNextUZTMidnight() - Date.now();
+      if (remaining <= 0) { setCountdown('00:00:00'); return; }
+      const h = Math.floor(remaining / 3600000);
+      const m = Math.floor((remaining % 3600000) / 60000);
+      const s = Math.floor((remaining % 60000) / 1000);
+      setCountdown(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="space-y-3">
+      <div className="card-flat p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-card-foreground text-sm">Kunlik 500 reklamani tugatganlar</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Bugun ({today}) — limit yangilanguncha</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-muted-foreground">Yangilanish</p>
+            <p className="text-sm font-mono font-bold text-card-foreground">⏱ {countdown}</p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="px-3 py-1.5 rounded-full bg-primary/10">
+            <span className="text-xs font-bold text-primary">{users.length} ta foydalanuvchi</span>
+          </div>
+          <button
+            onClick={load}
+            className="text-xs px-3 py-1.5 rounded-full bg-muted text-card-foreground font-bold"
+          >
+            🔄 Yangilash
+          </button>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="text-center py-8 text-sm text-muted-foreground">Yuklanmoqda...</div>
+      )}
+
+      {!loading && users.length === 0 && (
+        <div className="card-flat p-8 text-center">
+          <Megaphone className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm font-bold text-card-foreground">Hozircha hech kim 500 reklamani tugatmagan</p>
+          <p className="text-xs text-muted-foreground mt-1">Limit har kuni 00:00 (UZT) da yangilanadi</p>
+        </div>
+      )}
+
+      {!loading && users.map((u, i) => (
+        <div key={u.telegram_id} className="card-flat p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-primary">#{i + 1}</span>
+            </div>
+            {u.photo_url ? (
+              <img src={u.photo_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm text-card-foreground truncate">
+                {u.first_name || 'Foydalanuvchi'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {u.username ? `@${u.username}` : `ID: ${u.telegram_id}`}
+              </p>
+            </div>
+            <div className="px-2.5 py-1 rounded-full bg-green-500/10">
+              <span className="text-[10px] font-bold text-green-600">✅ TUGATDI</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2 rounded-lg bg-muted">
+              <p className="text-muted-foreground text-[10px]">Bugungi reklamalar</p>
+              <p className="font-bold text-card-foreground">{u.ad_task_ads_watched} / 500</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted">
+              <p className="text-muted-foreground text-[10px]">Tangalar</p>
+              <p className="font-bold text-card-foreground">{u.coins.toLocaleString()} 🪙</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted">
+              <p className="text-muted-foreground text-[10px]">Jami reklamalar</p>
+              <p className="font-bold text-card-foreground">{u.total_ads_watched.toLocaleString()}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted">
+              <p className="text-muted-foreground text-[10px]">Referal foyda</p>
+              <p className="font-bold text-card-foreground">{u.referral_earnings} 🪙</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted col-span-2">
+              <p className="text-muted-foreground text-[10px]">Telegram ID / Referal kod</p>
+              <p className="font-mono text-card-foreground">{u.telegram_id} • {u.referral_code}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
