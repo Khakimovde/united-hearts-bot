@@ -104,6 +104,7 @@ export default function Admin() {
           { key: 'users' as AdminTab, label: 'Foydalanuvchilar' },
           { key: 'withdrawals' as AdminTab, label: "So'rovlar" },
           { key: 'channels' as AdminTab, label: 'Kanallar' },
+          { key: 'adlimit' as AdminTab, label: 'Reklama limiti' },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -121,6 +122,7 @@ export default function Admin() {
       {activeTab === 'users' && <UsersSection />}
       {activeTab === 'withdrawals' && <WithdrawalsSection />}
       {activeTab === 'channels' && <ChannelsSection />}
+      {activeTab === 'adlimit' && <AdLimitSection />}
     </div>
   );
 }
