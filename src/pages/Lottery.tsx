@@ -493,7 +493,7 @@ export default function Lottery() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{cfg.description}</p>
-                {cfg.id === 'red' && referralCount < 60 && (
+                {cfg.id === 'red' && referralCount < 60 && t === 0 && (
                   <p className="text-xs font-bold mt-1" style={{ color: 'hsl(0 75% 50%)' }}>
                     {referralCount}/60 referal kerak
                   </p>
