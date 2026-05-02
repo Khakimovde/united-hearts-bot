@@ -269,9 +269,7 @@ function SpinWheel({ config, tickets, referralCount, onClose, onApplyReward }: {
           </button>
           {!canSpin && !spinning && (
             <p className="text-xs mt-2" style={{ color: 'hsl(0 75% 50%)' }}>
-              {config.id === 'red' && referralCount < 60
-                ? `60+ referal kerak (hozir: ${referralCount})`
-                : 'Chipta yo\'q'}
+              Chipta yo'q
             </p>
           )}
         </div>
