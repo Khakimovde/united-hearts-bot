@@ -149,7 +149,10 @@ function SpinWheel({ config, tickets, referralCount, onClose, onApplyReward }: {
 
   const items = config.items;
   const segmentAngle = 360 / items.length;
-  const canSpin = tickets > 0 && (config.id !== 'red' || referralCount >= 60);
+  // Red wheel: if user already has tickets (admin gift / won from green wheel),
+  // allow spinning regardless of referral count. Referral gate only blocks earning
+  // new red tickets in Tasks, not using existing ones.
+  const canSpin = tickets > 0;
 
   const handleSpin = useCallback(() => {
     if (spinRef.current || !canSpin) return;
@@ -266,9 +269,7 @@ function SpinWheel({ config, tickets, referralCount, onClose, onApplyReward }: {
           </button>
           {!canSpin && !spinning && (
             <p className="text-xs mt-2" style={{ color: 'hsl(0 75% 50%)' }}>
-              {config.id === 'red' && referralCount < 60
-                ? `60+ referal kerak (hozir: ${referralCount})`
-                : 'Chipta yo\'q'}
+              Chipta yo'q
             </p>
           )}
         </div>
@@ -492,7 +493,7 @@ export default function Lottery() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{cfg.description}</p>
-                {cfg.id === 'red' && referralCount < 60 && (
+                {cfg.id === 'red' && referralCount < 60 && t === 0 && (
                   <p className="text-xs font-bold mt-1" style={{ color: 'hsl(0 75% 50%)' }}>
                     {referralCount}/60 referal kerak
                   </p>
