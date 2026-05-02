@@ -71,7 +71,7 @@ interface DbChannelTask {
   created_at: string;
 }
 
-type AdminTab = 'stats' | 'users' | 'withdrawals' | 'channels';
+type AdminTab = 'stats' | 'users' | 'withdrawals' | 'channels' | 'adlimit';
 
 export default function Admin() {
   const telegram = useTelegram();
